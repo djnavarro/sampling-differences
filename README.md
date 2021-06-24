@@ -1,11 +1,17 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# New Cognitive Science Project
+# Individual differences in sensitivity to sampling effects
 
 <!-- badges: start -->
 
 <!-- badges: end -->
+
+Materials associated with:
+
+  - Wen, Y. P., Desai, S. C., Navarro, D. J., & Hayes, B. K. (in
+    preparation). *Who is sensitive to selection biases in inductive
+    reasoning?*
 
 This is a template for a new research project. Should contains the
 following folders: [analysis](./analysis), [data](./data),
