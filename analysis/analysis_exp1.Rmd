@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r packages, message=FALSE}
 library(tidyverse)
 library(scico)
-source(here::here("model","sampling_frames_model.R"))
+source(here::here("models","sampling_frames_model.R"))
 source(here::here("analysis","helpers.R"))
 ```
 
