@@ -13,9 +13,13 @@ Materials associated with:
     preparation). *Who is sensitive to selection biases in inductive
     reasoning?*
 
-This is a template for a new research project. Should contains the
-following folders: [analysis](./analysis), [data](./data),
-[experiments](./experiments), [other](./other),
+## Style guide
+
+The structure of this repository is based on Danielle Navarro’s
+[cogsci-template](https://github.com/djnavarro/cogsci-template) repo.
+
+Should contains the following folders: [analysis](./analysis),
+[data](./data), [experiments](./experiments), [other](./other),
 [preprocessing](./preprocessing). Optionally, it may also include a
 folder `models` containing modelling files, and a `writeup` folder
 containing the project writeup.
