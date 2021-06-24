@@ -1,0 +1,205 @@
+---
+title: "Analysis: Experiment 1"
+author: "Danielle Navarro"
+date: "21-Sep-2020"
+output:
+  rmarkdown::html_document:
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, message=FALSE}
+library(tidyverse)
+library(scico)
+source(here::here("model","sampling_frames_model.R"))
+source(here::here("analysis","helpers.R"))
+```
+
+## 0. Getting started
+
+To begin with let's take a look at the structure of the data set:
+
+```{r, message=FALSE}
+exp_data_file <- "exp1.csv"
+human <- read_csv(here::here("data", exp_data_file)) %>%
+  group_by(sample_size, sampling_frame, test_item) %>%
+  summarise(response = mean(response)/10, source = "human") %>% 
+  ungroup()
+
+human
+```
+
+Next, the model. The `sampling_frames_model()` function implements the inductive reasoning model introduced by Hayes et al (2019) with some minor simplifications under the hood. In the analyses reported in the original paper, the Bayesian model assumed that the learner specifies a Gaussian process prior over a space of possible inductive generalization functions, used JAGS to draw samples from the posterior distribution over functions, and then model predictions extracted by marginalising over the posterior to estimate the expected posterior probability of generalisation, for each test stimulus, under every possible condition in the experiments. 
+
+When implementing this model for the current paper, I realised that a lot of this complexity is unnecessary because the generalisation function is only ever measured at the six test points and the experimental design means our only interest is in the model predictions after the posterior has been marginalised. As a computational matter then, it suffices to approximate the full hypothesis space using a crude grid over possible functions. The relevant code in the modelling script:
+
+```{r, eval=FALSE}
+grid <- seq(.1, .9, .2)
+hypotheses <- as_tibble(expand.grid(
+  test1 = grid,
+  test2 = grid,
+  test3 = grid,
+  test4 = grid,
+  test5 = grid,
+  test6 = grid
+))
+```  
+
+The prior over this simplified hypothesis space is similar but not quite identical to the one in the 2019 paper. It is parameterised by a `smooth_weight` parameter that specifies how much to penalise variability in an inductive generalization function, and a `mean_weight` parameter (which needs a better name) that penalises the overall "height" of the generalization function. The idea behind the latter is that the learner should have a sparsity bias: most things in the world do not have plaxium blood or whatever.
+
+```{r, eval=FALSE}
+corr_distance <- with(hypotheses, {
+  abs(test2 - test1) + 
+    abs(test3 - test2) +
+    abs(test4 - test3) +
+    abs(test5 - test4) + 
+    abs(test6 - test5)
+})
+
+mean_val <- 0
+mean_distance <- with(hypotheses, {
+  abs(test1 - mean_val) + 
+    abs(test2 - mean_val) + 
+    abs(test3 - mean_val) + 
+    abs(test4 - mean_val) + 
+    abs(test5 - mean_val) + 
+    abs(test6 - mean_val) 
+})
+
+distance <- corr_distance * smooth_weight + 
+  mean_distance * mean_weight  
+
+prior <- exp(-distance)
+prior <- prior / sum(prior)
+```
+
+The model has two more implicit parameters, namely the `mean_val` (actually prior modal value of the generalisation function), fixed at 0 to enforce the sparsity constraint, and a `theta` parameter which is supposed to govern the "did they listen to the instructions?" idea. At `theta = 1` we assume the learner applies category sampling (items selected uniformly at random from entities in the category) in the category sampling condition and property sampling (items selected uniformly at random from entities possessing the property) in the property sampling condition. At `theta = 0` we assume that they didn't hear the instructions and instead apply weak sampling (items selected uniformly at random from all items in the sample space). For this design, weak sampling and category sampling yield identical inductive generalizations, so in practice `theta` is used to adjust the property sampling curves in the direction of the category sampling curves. Anyway this is all irrelevant because I decided to assume that people listened to the instructions and fixed `theta = 1`. 
+
+At this point I have not undertaken any serious search for optimum parameters, and as far as I can tell it's a pointless exercise because the model predictions don't vary much. A little exploration suggests setting the smoothness penalty to  1 and the sparsity penalty to 2 provides a pretty good fit:
+
+```{r, message=FALSE}
+model <- sampling_frames_model(theta = 1, smooth_weight = 1, mean_weight = 2) %>% 
+  mutate(source = "model")
+
+model
+```
+
+At a later point I should probably undertake a complete sweep of the parameter space to check there's nothing weird going on but given that this model is almost identical to the Hayes et al (2019) model -- which we know is quite inflexible -- I really don't think we have a problem. Anyway...
+
+## Comparing the model to the aggregated human data
+
+How closely does the model approximate the human data? To do this I'll plot the empirical generalization curves in the top row, and the equivalent model behaviour in the bottom row. Note that the empirical data are averaged across subjects at the moment:
+
+```{r, message=FALSE}
+dat <- bind_rows(model, human)
+plot_curves(dat) 
+```
+
+Another way to visualise it is with a scatter plot of model predictions against empirical data. I haven't bothered to compute quantitative fits, but it's pretty clear from inspection that the agreement is reasonably good. 
+
+```{r, message=FALSE}
+plot_points(dat)
+```
+
+So far, this is little more than a replication of the key result in Hayes et al (2019). It is not entirely without value, because replication is important, but it doesn't extend things very far.
+
+## 2. Do individuals show the qualitative patterns?
+
+A limitation of the original paper is that we did not have the ability to look closely at individual subject data. It is important to do this for two reasons: firstly, we would like to see whether the key regularities shown in the aggregate curves are satisfied by most participants. Secondly we would like to explore how much variation exists across subjects. In this section I'll address the first question. Looking at the curves above I'd argue that the theoretically relevant patterns can be specified in terms of five "groups" 
+
+- group A:
+- 1  (test items 1-2) > (test items 3-6) overall
+- 2  (test items 1-2) > (test items 3-6) category
+- 3  (test items 1-2) > (test items 3-6) property
+
+- group B:
+- 1  - (ss 20 > ss 8)  test items 1-2 category
+- 2  - (ss 20 > ss 2)  test items 1-2 category
+- 3  - (ss 8 > ss 2)   test items 1-2 category
+
+- group C: 
+- 1  - (ss 20 > ss 8)  test items 1-2 property
+- 2  - (ss 20 > ss 2)  test items 1-2 property
+- 3  - (ss 8 > ss 2)   test items 1-2 property
+
+- group D:
+- 1  - (ss 20 > ss 8)  test items 3-6 category
+- 2  - (ss 20 > ss 2)  test items 3-6 category
+- 3  - (ss 8 > ss 2)   test items 3-6 category
+
+- group E:
+- 1  - (ss 20 < ss 8)  test items 3-6 property
+- 2  - (ss 20 < ss 2)  test items 3-6 property
+- 3  - (ss 8 < ss 2)   test items 3-6 property
+
+```{r, message=FALSE, fig.height=8, fig.width=6}
+plot_constraint_checks(exp_data_file)
+```
+
+For the most part we can see that yes, individual subjects tend to satisfy these regularities. Something important to note, however. The pattern in Group D --- generalisations to distant items increase with sample size under category sampling --- is only *barely* produced by the model. It is something that the aggregated human data reveals as a moderately strong effect, but according to the model this effect should be much smaller. In fact, the model achieves this "only on a technicality" (i.e., the smoothness constraint means that the near items tend to "pull up" the distant items slightly). It also appears to be the case where the empirical evidence is weakest.
+
+Much to my own shock, this will turn out to be relevant later!
+
+
+## 3. Exploring the individual differences
+
+In order to explore the individual differences, we do a small amount of aggregation within subject. Specifically, we calculate average responses across the two "nearby" test items (1-2), and the four "far" test items (3-6). Thus the 36 raw responses from each person are reduced to 12 data points, one for each unique combination of sampling condition (category or property), sample size (2, 8 or 8) and test type (near or far). Here's what that looks like for participant 1:  
+
+```{r, message = FALSE}
+read_csv(here::here("data", exp_data_file))  %>%
+  mutate(test_type = ifelse(test_item %in% 1:2, "near", "far")) %>%
+  group_by(id, test_type, sample_size, sampling_frame) %>%
+  summarise(response = mean(response/10)) %>%
+  ungroup() %>%
+  pivot_wider(
+    id_cols = c(id, test_type, sample_size), 
+    names_from = sampling_frame, 
+    values_from = response
+  ) %>%
+  filter(id == 1)
+```  
+
+We visualise this in the following way. In the plot below, each panel represents a single participant (the arbitrary id number is shown in the top left corner). On the x-axis we plot their responses for the six category sampling conditions (i.e., one for each combination of sample size and test item type) and on the y-axis we plot their responses for the property sampling conditions. The axis limits span the full response range (i.e. from 0 to 1) in all cases. This effectively gives us a "scatter plot" in which each panel contains six data points. These are grouped into two lines, one for each test item type: the blue lines plot conditions involving the "near" test items, and the red lines display the generalisations for the "far" test items. The larger dots correspond to the case when the sample size was 20. 
+
+In essence you can think of these "tadpole" plots as a representation of how the generalisations made by a single subject change as the sample size increases from 2 to 8 and then to 20 (the large dot or "head" of the tadpole is 20 condition). There are two tadpoles, one for the near test items and one for the far test items. It allows you to notice all three "main effects" (or lack thereof) at a glance:
+
+- If the tadpoles are not moving (e.g., participants 11 and 12) the participant is **insensitive to sample size**: they generalise the same way regardless of whether they have seen 2, 8 or 20 examples. 
+- If the two tadpoles are very close to or on top of each other (e.g., participants 12 and 28), then the participant is **insensitive to similarity**: they generalise to the nearby test items the same way as they do to the distant items
+- If the two tadpoles move along the main diagonal (e.g., participant 1 and 47), the participant is -- on average -- **insensitive to the sampling manipulation**: they give the same average response to property sampling conditions as they do to the corresponding category sampling conditions
+
+```{r, message=FALSE}
+p <- plot_individual_differences(exp_data_file)
+p[[1]]
+```
+
+As this illustrates, there is quite a lot of variation! However, note that the theoretically relevant prediction generated by the Bayesian is actually a three way interaction. Specifically, what we should expect to see is:
+
+- The blue tadpoles should have a tendency to swim towards the top right corner (i.e., for nearby test items, increasing the sample size should increase the generalisation probability for category sampling and for property sampling)
+- The red tadpoles should have a tendency to swim towards the bottom right corner (i.e., for distant test items, increasing the sample size should increase the generalisation probability for category sampling *but* decrease it for property sampling)
+
+A few participants data produce the ordinal pattern corresponding to the three way interaction in a clean way (e.g., 14, 29, 36, 86), but the data are quite noisy and it is hard to see in this figure. To be conservative, I assume that "no change" on one or more dimension does not satisfy the prediction. Overall there are 17 of 61 participants (27%) that do so. If the changes were random, we would expect only 1/8 (12.5%) of the participants to do so. For whatever it is worth (not much in my opinion), a binomial test produces a p value of .0013. 
+
+A better way to visualise what is happening is shown below:
+
+```{r, message=FALSE}
+p[[2]]
+```
+
+In this plot what I have done is shift each of the tadpoles so that the "tail" (i.e., the sample size = 2 conditions) is in the middle of the plot, so that now each of the lines shows a "change from baseline". The panel on the left corresponds to the "nearby test items" (i.e., the blue tadpoles in the previous plot), and the panel on the right corresponds to the "distant test items" (formerly the red tadpoles). 
+
+In both panels the darker tadpoles correspond to participants whose generalizations changed in the predicted direction for the relevant test items, and the lighter ones correspond to participants whose generalizations did not satisfy the conditions. The numbers displayed in the 3x3 grid count the number of participants whose generalizations increased, stayed the same, or decreased as a function of sample size. As before vertical is property, horizontal is category. 
+
+It is clear from inspection that a clear majority (41 of 61, or 67%) shifted their judgements to the nearby items in the predicted way. The only possible violations that we see are that a few people decrease their judgments to nearby items in the property condition (10 of 61, or 16%), which probably makes some sense if we assume that in general people are sensitive to sampling but their judgments are sometimes affected by perceptual noise / memory limitations (e.g., test item 2 might be classified as a "distant" item and be treated accordingly). Overall the pattern here is overwhelming support: 56 of 61 (92%) of people adjust in the expected direction for category sampling, and 43 of 61 (70%) do so for property sampling (and those that don't aren't exactly convincing as violations of the prediction!)
+
+For the distant items the story is a little mixed. There is a clear plurality (24 of 61, or 39%) of people who move in the expected direction for the distant items. The second most frequent pattern (13 of 61, or 16%) move toward the bottom left (i.e., decreasing generalisation in both property and category sampling). Again as a probably-not-super-exciting observation a binomial test comparing these two conditions yields a non significant p-value of .1 but again I don't think that really means much. Another way to think about it is that for the distant test items, almost everyone (42 of 61, or 69%) adjusts their generalization in the expected way (decreasing it) for the property sampling condition, but there is a lot more variation in how people treat these items in the category sampling condition: 33 of 61 people (54%) increased their generalization (as per prediction), but 11 of 61 (18%) did not adjust at all, and 17 of 61 (28%) decreased their generalizations (against the prediction). 
+
+## Tentative interpretation
+
+My take home here is that while the individual differences suggest most people behave in the predicted fashion, there is a non negligible minority of people who violate the qualitative pattern in a quite specific way: when they are told that items are category sampled, they decrease rather than increase their generalizations, or do not change those generalisations at all. 
+
+This pattern is theoretically interpretable: if we go back to the very first plot, we see that the model is pretty ambivalent. The only reason that it predicts the same ordinal prediction that we see in the aggregated human data is through the actions of the smoothness parameter: increasing the generalisation to the near items will tend to drag up the far items too. If the smoothness parameter is ratcheted up then we would see a larger effect. Decreasing it, however, would not cause a reversal. So if we imagine that people vary in their priors what you'd expect to see is some people showing a strong effect in the predicted direction (because they have high smoothness), and other people showing no effect at all but perhaps going the other way due to sampling error. For the most part that appears pretty consistent with what we observe.
+
+
