@@ -2,70 +2,106 @@ library(tidyverse)
 library(mvtnorm)
 library(magrittr)
 
-# parameter dictionary:
-#
-# theta = the sampling assumption: 1 = strong, 0 = weak
 # tau = baseline in smoothness
 # rho = decay in smoothness constraint
 # sigma = inherent noise
 # mu = prior mean
 
-sampling_frames_model <- function(theta = 1, tau = 3, rho = 1, sigma = .5, mu = .05) {
 
-  # specify the locations of the test items
-  x_grid = 1:6
+sampling_frames_model <- function(
+  theta = 1,   # sampling assumption lies between 0 (weak) and 1 (strong)
+  tau = 3,     # gaussian process prior: baseline smoothness constraint
+  rho = 1,     # gaussian process prior: decay rate for smoothness constraint
+  sigma = .5,  # gaussian process prior: inherent noise level in the data
+  mu = .05     # prior mean (on the probability scale, not logit scale)
+) {
 
-  # specify possible values for the probability
-  y_grid <- seq(.1, .9, .2)
 
-  # logit function: phi is a logistic function of f, so
-  # f is a logit function of phi
+  # useful quantities -------------------------------------------------------
+
+  x_grid = 1:6                # locations of the test items
+  y_grid <- seq(.1, .9, .2)   # possible values for the probability
+
+  # construct the hypothesis space: each row specifies the
+  # value of the unknown function at each of the 6 test points
+  hypotheses <- as_tibble(expand.grid(
+    test1 = y_grid,
+    test2 = y_grid,
+    test3 = y_grid,
+    test4 = y_grid,
+    test5 = y_grid,
+    test6 = y_grid
+  ))
+
+  # conditions in the experiment
+  conditions <- as_tibble(expand.grid(
+    n = c(2, 8, 20),
+    frame = c("category", "property"),
+    stringsAsFactors = FALSE
+  ))
+
+
+
+  # convenience functions ---------------------------------------------------
+
+  # logit function: phi is a logistic function of f, so f is a logit of phi
   logit <- function(phi) {
     log(phi/(1-phi))
   }
 
-  # define the psychological distance between values
+  # the psychological distance between values is just the difference between
+  # coordinates in the stimulus space. this is a little unrealistic, but good
+  # enough as an approximation in the current setting
   distance <- function(xi, xj) {
     abs(xi - xj)
   }
 
-  # define the radial basis kernel function
-  rbf_kernel <- function(dist, tau, rho) {
+  # the kernel function
+  kernel <- function(dist) {
     tau^2 * exp(-rho * dist)
   }
 
-  # construct base variance vector (to be added to the main
-  # diagonal of the covariance matrix)
-  add_noise <- function(Sigma, sigma) {
-    Sigma + diag(sigma^2, nrow(Sigma), ncol(Sigma))
+  # inherent noise
+  noise <- function() {
+    diag(sigma^2, length(x_grid), length(x_grid))
   }
 
-  # distance matrix between items is defined by the
-  # outer product...
-  distance_matrix <- outer(x_grid, x_grid, distance)
+  # normalise to 1
+  normalise <- function(x) {x / sum(x)}
 
-  prior_mean <- function(mu) {
-    rep(mu, length(x_grid))
+  # prior mean vector is constant
+  prior_mean <- function() {
+    logit(rep.int(x = mu, times = length(x_grid)))
   }
 
-  # compute the priors (this is a placeholder)
-  model_prior <- function(hypotheses_tbl) {
-
-    hypotheses_mat <- as.matrix(hypotheses_tbl)
-
-    covariance_matrix <- distance_matrix %>%
-      rbf_kernel(tau = tau, rho = rho) %>%
-      add_noise(sigma = sigma)
-
-    mean_vector <- prior_mean(mu = mu)
-
-    prior <- logit(hypotheses_mat) %>%
-      dmvnorm(mean = logit(mean_vector), sigma = covariance_matrix)
-
-    prior <- prior / sum(prior)
-
-    return(prior)
+  # covariance matrix
+  covariance_matrix <- function() {
+    distance_matrix <- outer(x_grid, x_grid, distance)
+    kernel(distance_matrix) + noise()
   }
+
+  # transform the data frame of hypotheses on the probability
+  # scale into a matrix of hypotheses on the logit scale
+  logit_scale_hypotheses <- function() {
+    logit(as.matrix(hypotheses))
+  }
+
+
+
+  # gaussian process prior --------------------------------------------------
+
+  model_prior <- function() {
+    dmvnorm(
+      x = logit_scale_hypotheses(),
+      mean = prior_mean(),
+      sigma = covariance_matrix()
+    ) %>%
+      normalise()
+  }
+
+
+
+  # sampling frame imposes likelihood ---------------------------------------
 
   # the samples observed by the participant occur only in
   # the locations corresponding to test1 and test2, and are
@@ -77,13 +113,18 @@ sampling_frames_model <- function(theta = 1, tau = 3, rho = 1, sigma = .5, mu = 
   # at each location are uniform) the likelihood is proportional
   # to the function value at the location, where the normalisation
   # depends on the admissability rule specified by the frame
-  model_likelihood <- function(n, frame, hypotheses_tbl) {
+
+  model_likelihood <- function(cond) {
+
+    # read off condition parameters
+    n <- cond$n
+    frame <- cond$frame
 
     if(frame == "property") {
 
       # property sampling: must be positive property, can be
       # any location on the stimulus space
-      denominator <- with(hypotheses_tbl, {
+      denominator <- with(hypotheses, {
         test1 + test2 + test3 + test4 + test5 + test6
       })
 
@@ -99,12 +140,12 @@ sampling_frames_model <- function(theta = 1, tau = 3, rho = 1, sigma = .5, mu = 
 
     # compute likelihood for the two relevant elements of the sample space
     # (conditional on using the relevant sampling frame)
-    prob1 <- hypotheses_tbl$test1 / denominator
-    prob2 <- hypotheses_tbl$test2 / denominator
+    prob1 <- hypotheses$test1 / denominator
+    prob2 <- hypotheses$test2 / denominator
 
     # weak sampling equivalent
-    weak1 <- hypotheses_tbl$test1 / 6
-    weak2 <- hypotheses_tbl$test2 / 6
+    weak1 <- hypotheses$test1 / 6
+    weak2 <- hypotheses$test2 / 6
 
     # mixture
     prob1 <- theta * prob1 + (1 - theta) * weak1
@@ -117,74 +158,65 @@ sampling_frames_model <- function(theta = 1, tau = 3, rho = 1, sigma = .5, mu = 
     return(sample_likelihood)
   }
 
-  posterior_mean <- function(n, frame, hypotheses_tbl, prior) {
 
-    likelihood <- model_likelihood(n, frame, hypotheses_tbl)
-    posterior <- likelihood * prior
-    posterior <- posterior / sum(posterior)
+
+  # compute generalisation gradient -----------------------------------------
+
+  generalisation_gradient <- function(cond, prior) {
+
+    likelihood <- model_likelihood(cond)
+    posterior <- normalise(likelihood * prior)
 
     return(tibble(
-      test1 = sum(posterior * hypotheses_tbl$test1),
-      test2 = sum(posterior * hypotheses_tbl$test2),
-      test3 = sum(posterior * hypotheses_tbl$test3),
-      test4 = sum(posterior * hypotheses_tbl$test4),
-      test5 = sum(posterior * hypotheses_tbl$test5),
-      test6 = sum(posterior * hypotheses_tbl$test6),
+      test1 = sum(posterior * hypotheses$test1),
+      test2 = sum(posterior * hypotheses$test2),
+      test3 = sum(posterior * hypotheses$test3),
+      test4 = sum(posterior * hypotheses$test4),
+      test5 = sum(posterior * hypotheses$test5),
+      test6 = sum(posterior * hypotheses$test6),
     ))
   }
 
 
-
   # function to do the work -------------------------------------------------
 
-  infer <- function(hypotheses_tbl) {
-
-    prior <- model_prior(hypotheses_tbl)
-    conditions <- as_tibble(expand.grid(
-      n = c(2, 8, 20),
-      frame = c("category", "property"),
-      stringsAsFactors = FALSE
-    ))
-
-    generalisations <- conditions %>%
+  infer <- function() {
+    conditions %>%
       transpose() %>%
-      map_dfr(~posterior_mean(.x$n, .x$frame, hypotheses, prior))
-
-    results <- bind_cols(conditions, generalisations)
-    results <- results %>%
+      map_dfr(generalisation_gradient, prior = model_prior()) %>%
+      bind_cols(conditions, .) %>%
       pivot_longer(
         cols = starts_with("test"),
         names_to = "test_item",
         values_to = "response"
       ) %>%
-      rename(
-        "sampling_frame" = "frame",
-        "sample_size" = "n"
-      ) %>%
-      mutate(
-        test_item = as.numeric(str_remove_all(test_item, "test"))
-      )
-
-    return(results)
+      rename("sampling_frame" = "frame", "sample_size" = "n") %>%
+      mutate(test_item = as.numeric(str_remove_all(test_item, "test")))
   }
 
 
-  # specify hypothesis space and run ----------------------------------------
 
-  # construct the hypothesis space: each row specifies the
-  # value of the unknown function at each of the 6 test points
-  hypotheses <- as_tibble(expand.grid(
-    test1 = y_grid,
-    test2 = y_grid,
-    test3 = y_grid,
-    test4 = y_grid,
-    test5 = y_grid,
-    test6 = y_grid
-  ))
-
-  return(infer(hypotheses))
-
+  # do the work and return to user ------------------------------------------
+  return(infer())
 }
+
+
+
+
+
+
+
+
+
+
+# test...
+library(scico)
+source(here::here("analysis","helpers.R"))
+exp_data_file <- "exp1.csv"
+human <- read_csv(here::here("data", exp_data_file)) %>%
+  group_by(sample_size, sampling_frame, test_item) %>%
+  summarise(response = mean(response)/10, source = "human") %>%
+  ungroup()
 
 model <- sampling_frames_model() %>% mutate(source = "model")
 dat <- bind_rows(model, human)
