@@ -1,0 +1,68 @@
+---
+title             : "Appendix B: Model description"
+shorttitle        : "Model description"
+
+author: 
+  - name          : "Danielle Navarro"
+    affiliation   : "1, 2"
+    corresponding : yes    # Define only one corresponding author
+    address       : "School of Psychology, UNSW Sydney, Kensington NSW 2052"
+    email         : "d.navarro@unsw.edu.au"
+
+affiliation:
+  - id            : "1"
+    institution   : "School of Psychology, UNSW Sydney"
+  - id            : "2"
+    institution   : "UNSW Data Science Hub, UNSW Sydney"
+
+floatsintext      : no
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+linenumbers       : yes
+mask              : no
+draft             : no
+
+documentclass     : "apa6"
+classoption       : "doc"
+output            : papaja::apa6_pdf
+
+header-includes   :
+  - \usepackage{bm}
+---
+
+
+```{r setup, include = FALSE}
+library("papaja")
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+The model used in this paper is a simplified version of the one described by Hayes et al (2019, see their Appendix B), and whose implementation is archived at https://github.com/djnavarro/samplingframes. The motivation for the model is to consider how one might learn an arbitrary function $f$ defined over some stimulus space $\mathcal{X}$. In the general case $\mathcal{X}$ can be richly structured, but in the current setting we can consider stimuli that vary
+only on a single continuous dimension. The Gaussian process (GP; see Rasmussen & Williams 2006) provides a method
+for specifying priors over smooth functions $f : \mathbb{R} \rightarrow \mathbb{R}$ that maps every possible stimulus $x$ onto a subjective inductive strength $y = f(x)$. The function $f$ is defined over the entire stimulus space $\mathcal{X}$ but is measured only at a known, finite set of points $\bm{x} = (x_1, \ldots, x_n)$. In this setting the joint distribution over the corresponding outputs $\bm{y} = (y_1, \ldots, y_n)$ is a finite-dimensional marginalisation of the Gaussian process and is thus a multivariate Gaussian with mean vector $\bm{\mu} = (\mu_1, \ldots, \mu_n)$ and covariance matrix $\bm{\Sigma} = [\sigma_{ij}]$ for $i, j \in 1, \ldots, n$
+
+$$
+f(x) \sim \mbox{Normal}(\bm\mu, \bm\Sigma)
+$$
+
+The covariance matrix is used to control the smoothness of the inferred function $f$ and defined by the kernel function $\sigma_{ij} = K(x_i, x_j)$. Following the logic outlined by Hayes et al, we apply a radial basis kernel function kernel in which the correlation diminishes as a Gaussian function of the distance $d_{ij}$ between items in psychological space: 
+
+$$
+K(x_i, x_j) = \tau^2 \exp\left(-\rho {d_ij}^2\right)
+$$
+and 
+$$
+\sigma_{ij} = \left\{ \begin{array}{rl} K(x_i, x_j) & \mbox{ if } i \neq j \\ K(x_i, x_i) + \sigma^2 & \mbox{ if } i = j \end{array}  \right.
+$$
+In these expressions, $\tau$ describes the baseline correlation between stimuli, $\rho$ governs the rate at which the correlation decays as a function of psychological distance, and $\sigma$ is the inherent noise in the data. In our applications we assume the prior mean is the same for all stimuli, so the fourth and last free parameter of the model is the prior mean $\mu$. 
+
+
+- Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. *Cognitive Psychology, 113*. https://doi.org/10.1016/j.cogpsych.2019.05.003
+- Rasmussen, C. E., and Williams, C. K. I. (2006). *Gaussian Processes for Machine Learning*
+
+
