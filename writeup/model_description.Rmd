@@ -5,8 +5,6 @@ shorttitle        : "Model description"
 author: 
   - name          : "Danielle Navarro"
     affiliation   : "1, 2"
-    corresponding : yes    # Define only one corresponding author
-    address       : "School of Psychology, UNSW Sydney, Kensington NSW 2052"
     email         : "d.navarro@unsw.edu.au"
 
 affiliation:
@@ -42,27 +40,93 @@ set.seed(42)
 knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```
 
-The model used in this paper is a simplified version of the one described by Hayes et al (2019, see their Appendix B), and whose implementation is archived at https://github.com/djnavarro/samplingframes. The motivation for the model is to consider how one might learn an arbitrary function $f$ defined over some stimulus space $\mathcal{X}$. In the general case $\mathcal{X}$ can be richly structured, but in the current setting we can consider stimuli that vary
-only on a single continuous dimension. The Gaussian process (GP; see Rasmussen & Williams 2006) provides a method
+\noindent
+The model used in this paper is a simplified version of the one described by Hayes et al (2019; see their Appendix B and https://github.com/djnavarro/samplingframes). The motivation for the model is to consider how one might learn an arbitrary function $f$ defined over some stimulus space $\mathcal{X}$. In the general case $\mathcal{X}$ can be richly structured, but in the current setting we can consider stimuli that vary
+only on a single continuous dimension. 
+
+## The prior distribution
+
+\noindent
+The Gaussian process (GP; see Rasmussen & Williams 2006) provides a method
 for specifying priors over smooth functions $f : \mathbb{R} \rightarrow \mathbb{R}$ that maps every possible stimulus $x$ onto a subjective inductive strength $y = f(x)$. The function $f$ is defined over the entire stimulus space $\mathcal{X}$ but is measured only at a known, finite set of points $\bm{x} = (x_1, \ldots, x_n)$. In this setting the joint distribution over the corresponding outputs $\bm{y} = (y_1, \ldots, y_n)$ is a finite-dimensional marginalisation of the Gaussian process and is thus a multivariate Gaussian with mean vector $\bm{\mu} = (\mu_1, \ldots, \mu_n)$ and covariance matrix $\bm{\Sigma} = [\sigma_{ij}]$ for $i, j \in 1, \ldots, n$
 
 $$
 f(x) \sim \mbox{Normal}(\bm\mu, \bm\Sigma)
 $$
 
+\noindent
 The covariance matrix is used to control the smoothness of the inferred function $f$ and defined by the kernel function $\sigma_{ij} = K(x_i, x_j)$. Following the logic outlined by Hayes et al, we apply a radial basis kernel function kernel in which the correlation diminishes as a Gaussian function of the distance $d_{ij}$ between items in psychological space: 
 
 $$
-K(x_i, x_j) = \tau^2 \exp\left(-\rho {d_ij}^2\right)
+K(x_i, x_j) = \tau^2 \exp\left(-\rho {d_{ij}}^2\right)
 $$
 and 
 $$
 \sigma_{ij} = \left\{ \begin{array}{rl} K(x_i, x_j) & \mbox{ if } i \neq j \\ K(x_i, x_i) + \sigma^2 & \mbox{ if } i = j \end{array}  \right.
 $$
-In these expressions, $\tau$ describes the baseline correlation between stimuli, $\rho$ governs the rate at which the correlation decays as a function of psychological distance, and $\sigma$ is the inherent noise in the data. In our applications we assume the prior mean is the same for all stimuli, so the fourth and last free parameter of the model is the prior mean $\mu$. 
+\noindent
+This prior distribution is described by four parameters:
 
+- $\tau$ describes the baseline correlation between stimuli
+- $\rho$ governs the rate at which the correlation decays with psychological distance
+- $\sigma$ is the inherent noise in the data 
+- $\mu$ is the prior mean, where we assume that $\mu_i = \mu$ for all $i$
+
+## The likelihood function
+
+\noindent
+We consider three different sampling assumptions the learner might make. Suppose the learner has observed a stimulus $x$ that is property-positive (i.e., possesses the property). 
+
+- Under *property sampling* the learner assumes that this item was chosen uniformly at random from the set of property-positive stimuli. If $\phi_i$ denotes the probability (or proportion) of $x_i$ items (e.g., rocks of this specific size) that are plaxium positive, and (for simplicity) assume that the base rates of all stimulus types are the same, then the probability that a random plaxium-positive stimulus will turn out to have value $x_i$ is 
+  $$
+  P(x_i | \bm{\phi}) = \frac{\phi_i}{\sum_j \phi_j}
+  $$
+  where the sum in the denominator is taken across all possible stimuli (for these designs that's just the six test items). 
+
+- Under **category sampling** the items are sampled uniformly at random from items that belong to the category (in this case, the category consists of 2 of the 6 test items only). If there are $|c|$ items in the category that have the same base rates, then the probability of the stimulus value $x_i$ is $1/|c|$. The probability that the item is also property positive depends on the value of $\phi_i$ and so
+  $$
+  P(x_i | \bm{\phi}) = \frac{\phi_i}{|c|}
+  $$
+- Under **weak sampling**, items are sampled uniformly at random from all stimuli included in the experiment. In other words, it's identical to category sampling except that the "category" is larger. If $|x|$ denotes the total number of items (in this case 6)
+
+  $$
+  P(x_i | \bm{\phi}) = \frac{\phi_i}{|x|}
+  $$
+  Because they differ only by a constant that disappears later during the normalisation weak sampling and category sampling are indistinguishable for this design.
+
+\noindent
+Elsewhere in the literature, it has been argued that weak sampling is essentially the model one assumes when one has no theory of the task. Navarro et al (2012) formalised this idea slightly by arguing that people might adopt a "mixed" sampling model where items are strongly sampled (be that property or category) with probability $\theta$, and weakly sampled with probability $1-\theta$. The version of the model we implement includes this $\theta$ parameter: however, because weak and category sampling are identical in this design, the only effect that $\theta$ has is to change model behaviour in the property sampling condition. Setting $\theta = 0$ produces a null effect of sampling frame (i.e., model predicts no difference between category and property sampling, and that both conditions should look like weak/category sampling), whereas $\theta = 1$ produces the largest possible effect. 
+
+### Generalisation gradients
+
+\noindent
+Suppose the learner has seen items $\bm x$ that are property-positive. Bayesian reasoning yields:
+
+$$ 
+P({\bm \phi}_h | \bm x) = \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\int P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h) \ dh^\prime}
+$$
+
+\noindent
+As noted below, we approximate the full hypothesis space $\mathcal{H}$ of possible functions by a finite set so 
+
+$$ 
+P({\bm \phi}_h | \bm x) \approx \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\sum_{h^\prime} P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}
+$$
+The generalisation probability is obtained by computing the expected probability that a stimulus located at $y_i$ is plaxium positive:
+
+$$
+g(y_i | \bm{x}) = \sum_{h^\prime} \phi_{ih} P({\bm \phi}_h | \bm x)
+$$
+
+
+## Implementation details
+
+Implemented in R, used finite hypotheses space consisting of $5^6 = 15625$ functions. Link to source code. Etc. Default parameter values. 
+
+## References
 
 - Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. *Cognitive Psychology, 113*. https://doi.org/10.1016/j.cogpsych.2019.05.003
+- Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. *Cognitive Science, 36*, 187-223. https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x
 - Rasmussen, C. E., and Williams, C. K. I. (2006). *Gaussian Processes for Machine Learning*
 
 
