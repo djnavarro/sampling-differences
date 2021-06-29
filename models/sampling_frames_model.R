@@ -1,4 +1,3 @@
-library(magrittr, include.only = "%>%")
 
 sampling_frames_model <- function(
   theta = 1,   # sampling assumption lies between 0 (weak) and 1 (strong)
@@ -8,6 +7,7 @@ sampling_frames_model <- function(
   mu = .05     # prior mean (on the probability scale, not logit scale)
 ) {
 
+  `%>%` <- magrittr::`%>%` # use the pipe in the local environment
 
   # useful quantities -------------------------------------------------------
 
@@ -244,6 +244,3 @@ sampling_frames_model <- function(
 
   return(output)
 }
-
-model <- sampling_frames_model()
-print(model)
