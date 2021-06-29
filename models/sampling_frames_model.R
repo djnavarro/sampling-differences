@@ -1,12 +1,4 @@
-library(tidyverse)
-library(mvtnorm)
-library(magrittr)
-
-# tau = baseline in smoothness
-# rho = decay in smoothness constraint
-# sigma = inherent noise
-# mu = prior mean
-
+library(magrittr, include.only = "%>%")
 
 sampling_frames_model <- function(
   theta = 1,   # sampling assumption lies between 0 (weak) and 1 (strong)
@@ -23,8 +15,12 @@ sampling_frames_model <- function(
   y_grid <- seq(.1, .9, .2)   # possible values for the probability
 
   # construct the hypothesis space: each row specifies the
-  # value of the unknown function at each of the 6 test points
-  hypotheses <- as_tibble(expand.grid(
+  # value of the unknown function at each of the 6 test points. note that
+  # this is constructed on the *raw* (i.e., probability) scale. not
+  # the transformed (i.e., logit) scale. this means that the likelihood
+  # functions can use these values transparently, but the prior needs to
+  # logit-transform them
+  hypotheses <- tibble::as_tibble(expand.grid(
     test1 = y_grid,
     test2 = y_grid,
     test3 = y_grid,
@@ -34,7 +30,7 @@ sampling_frames_model <- function(
   ))
 
   # conditions in the experiment
-  conditions <- as_tibble(expand.grid(
+  conditions <- tibble::as_tibble(expand.grid(
     n = c(2, 8, 20),
     frame = c("category", "property"),
     stringsAsFactors = FALSE
@@ -91,7 +87,7 @@ sampling_frames_model <- function(
   # gaussian process prior --------------------------------------------------
 
   model_prior <- function() {
-    dmvnorm(
+    mvtnorm::dmvnorm(
       x = logit_scale_hypotheses(),
       mean = prior_mean(),
       sigma = covariance_matrix()
@@ -99,6 +95,51 @@ sampling_frames_model <- function(
       normalise()
   }
 
+
+
+  # the three possible sampling models --------------------------------------
+
+  # sampling models when the items are selected *from* the extension
+  # of the category, or the extension of the property... for property
+  # sampling the item can be sampled at any location in the stimulus
+  # space so long as it is property-positive...
+  property_sampling <- function(stimulus) {
+    numerator <- eval(
+      expr = substitute(stimulus),
+      envir = hypotheses
+    )
+    denominator <- eval(
+      expr = quote(test1 + test2 + test3 + test4 + test5 + test6),
+      envir = hypotheses
+    )
+    return(numerator / denominator)
+  }
+
+  # category sampling is also a strong sampling model, but where we
+  # are restricted to sampling items that belong to some subset of the
+  # stimulus space (regardless of whether they are property positive).
+  # In this context, that subset is simply the first two test items.
+  category_sampling <- function(stimulus) {
+    numerator <- eval(
+      expr = substitute(stimulus),
+      envir = hypotheses
+    )
+    denominator <- 2
+    return(numerator / denominator)
+  }
+
+  # weak sampling assumes the items are sampled uniformly at random from
+  # all items, and the fact that the observed item turned out to be property
+  # positive is coincidental. in this experimental design there is not much
+  # of a difference between weak sampling and category sampling
+  weak_sampling <- function(stimulus) {
+    numerator <- eval(
+      expr = substitute(stimulus),
+      envir = hypotheses
+    )
+    denominator <- 6
+    return(numerator / denominator)
+  }
 
 
   # sampling frame imposes likelihood ---------------------------------------
@@ -118,42 +159,30 @@ sampling_frames_model <- function(
 
     # read off condition parameters
     n <- cond$n
-    frame <- cond$frame
 
-    if(frame == "property") {
-
-      # property sampling: must be positive property, can be
-      # any location on the stimulus space
-      denominator <- with(hypotheses, {
-        test1 + test2 + test3 + test4 + test5 + test6
-      })
-
+    if(cond$frame == "property") {
+      strong_prob1 <- property_sampling(test1)
+      strong_prob2 <- property_sampling(test2)
     }
-
-    if(frame == "category") {
-
-      # category sampling: can be positive or negative, but can
-      # only be locations 1 or 2
-      denominator <- 2
-
+    if(cond$frame == "category") {
+      strong_prob1 <- category_sampling(test1)
+      strong_prob2 <- category_sampling(test2)
     }
+    weak_prob1 <- weak_sampling(test1)
+    weak_prob2 <- weak_sampling(test2)
 
-    # compute likelihood for the two relevant elements of the sample space
-    # (conditional on using the relevant sampling frame)
-    prob1 <- hypotheses$test1 / denominator
-    prob2 <- hypotheses$test2 / denominator
-
-    # weak sampling equivalent
-    weak1 <- hypotheses$test1 / 6
-    weak2 <- hypotheses$test2 / 6
-
-    # mixture
-    prob1 <- theta * prob1 + (1 - theta) * weak1
-    prob2 <- theta * prob2 + (1 - theta) * weak2
+    # the learner is assumed to apply a mixture of strong and weak sampling,
+    # per the model in Navarro et al (2012). in practice, because weak and
+    # category sampling are indistinguishable in this design, the role of
+    # the theta parameter is to shift the generalisation gradients in the
+    # property sampling condition only (in the direction of the category/weak
+    # sampling gradients)
+    prob1 <- theta * strong_prob1 + (1 - theta) * weak_prob1
+    prob2 <- theta * strong_prob2 + (1 - theta) * weak_prob2
 
     # observations are conditionally iid so the probability of the sample
-    # is the product  of the individual observations:
-    sample_likelihood <- prob1^(n/2) * prob2^(n/2)
+    # is the product of the individual observations:
+    sample_likelihood <- prob1^(cond$n/2) * prob2^(cond$n/2)
 
     return(sample_likelihood)
   }
@@ -162,63 +191,59 @@ sampling_frames_model <- function(
 
   # compute generalisation gradient -----------------------------------------
 
+  expected_value <- function(probability, value) {
+    sum(probability * value)
+  }
+
+  # to compute the generalisation gradient we first compute the posterior
+  # distribtution over hypotheses, given the observed data and the sampling
+  # condition. then, for each test item, the posterior expected probability
+  # that a new item possesses the property is just the expected value of
+  # the unknown function at that location in the stimulus space:
+
   generalisation_gradient <- function(cond, prior) {
 
     likelihood <- model_likelihood(cond)
     posterior <- normalise(likelihood * prior)
-
-    return(tibble(
-      test1 = sum(posterior * hypotheses$test1),
-      test2 = sum(posterior * hypotheses$test2),
-      test3 = sum(posterior * hypotheses$test3),
-      test4 = sum(posterior * hypotheses$test4),
-      test5 = sum(posterior * hypotheses$test5),
-      test6 = sum(posterior * hypotheses$test6),
-    ))
-  }
-
-
-  # function to do the work -------------------------------------------------
-
-  infer <- function() {
-    conditions %>%
-      transpose() %>%
-      map_dfr(generalisation_gradient, prior = model_prior()) %>%
-      bind_cols(conditions, .) %>%
-      pivot_longer(
-        cols = starts_with("test"),
-        names_to = "test_item",
-        values_to = "response"
-      ) %>%
-      rename("sampling_frame" = "frame", "sample_size" = "n") %>%
-      mutate(test_item = as.numeric(str_remove_all(test_item, "test")))
+    generalisation <- tibble::tibble(
+      test1 = expected_value(posterior, hypotheses$test1),
+      test2 = expected_value(posterior, hypotheses$test2),
+      test3 = expected_value(posterior, hypotheses$test3),
+      test4 = expected_value(posterior, hypotheses$test4),
+      test5 = expected_value(posterior, hypotheses$test5),
+      test6 = expected_value(posterior, hypotheses$test6)
+    )
+    return(generalisation)
   }
 
 
 
   # do the work and return to user ------------------------------------------
-  return(infer())
+
+  # this is the important part of the computation
+  result <- conditions %>%
+    purrr::transpose() %>%
+    purrr::map_dfr(generalisation_gradient, prior = model_prior()) %>%
+    dplyr::bind_cols(conditions, .)
+
+  # clean it up and make it nice and pretty
+  output <- result %>%
+    tidyr::pivot_longer(
+      cols = tidyselect::starts_with("test"),
+      names_to = "test_item",
+      values_to = "response"
+    ) %>%
+    dplyr::rename(
+      sampling_frame = frame,
+      sample_size = n
+    ) %>%
+    dplyr::mutate(
+      test_item = as.numeric(stringr::str_remove_all(test_item, "test")),
+      source = "model"
+    )
+
+  return(output)
 }
 
-
-
-
-
-
-
-
-
-
-# test...
-library(scico)
-source(here::here("analysis","helpers.R"))
-exp_data_file <- "exp1.csv"
-human <- read_csv(here::here("data", exp_data_file)) %>%
-  group_by(sample_size, sampling_frame, test_item) %>%
-  summarise(response = mean(response)/10, source = "human") %>%
-  ungroup()
-
-model <- sampling_frames_model() %>% mutate(source = "model")
-dat <- bind_rows(model, human)
-print(plot_curves(dat))
-
+model <- sampling_frames_model()
+print(model)
