@@ -1,7 +1,14 @@
 
 ## 30 June 2021
 
-- Tidies my original analysis.
+- Started tidying my original analysis. One thing that pops out at me in 
+  retrospect is that the list of "patterns" I used the first time is too
+  long. Most of the "effects" (god I hate that word) in the data set aren't
+  particularly interesting. Yes, we replicate the effect that generalisation
+  decays with dissimilarity, but that's trivial and not relevant to the 
+  specific topic of investigation. Current version reduces this list to those
+  that are (according to the model) specifically relevant to the sampling frame
+  manipulation
 
 ## 29 June 2021
 
@@ -15,6 +22,15 @@
   are not precisely identical to those in Hayes et al. I did a small amount of
   hand tuning against the data from Experiment 1, but nothing particularly 
   thorough.
+- Additional note (added 1 July 2021): the heuristic model that I started this
+  repo with does technically constitute an abandoned fork in the analysis
+  process. Happily it's more of a "reassuring" one than a "worrying" one. The
+  heuristic model I wrote down in September 2020 instantiates the same 
+  qualitative biases (sparsity, smoothness, and sensitivity to sampling) as 
+  the GP model from Hayes et al (2019), and it produces essentially the same
+  pattern of results. In other words, this suggests that we're getting the 
+  findings we are getting because of these "core" assumptions, and not because
+  of some ancillary property of the GP. 
 
 ## 21 September 2020
 
