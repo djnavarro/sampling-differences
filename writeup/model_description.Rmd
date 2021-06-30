@@ -121,12 +121,17 @@ $$
 
 ## Implementation details
 
-Implemented in R, used finite hypotheses space consisting of $5^6 = 15625$ functions. Link to source code. Etc. Default parameter values. 
+The model is implemented in R (R Core Team 2020) and uses some functions supplied through tidyverse (Wickham et al 2019). Precise information about the R environment in which computation was performed is available at https://github.com/djnavarro/sampling-differences, generated using the renv package to (Ushey 2021) to aid future reproducibility. In all modelling exercises, the finite approximate hypothesis space consisted of $5^6 = 15625$ functions whose values are specified at the six stimulus values corresponding to the stimuli used in the experiment, using five possible probability values $\phi_i \in \{.1, .3, .5, .7, .9\}$ for all items. Additional documentation for the source code and analyses can be found at the "sampling-differences" GitHub repository.
 
 ## References
 
 - Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. *Cognitive Psychology, 113*. https://doi.org/10.1016/j.cogpsych.2019.05.003
 - Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. *Cognitive Science, 36*, 187-223. https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x
+- R Core Team (2020). *R: A language and environment for statistical computing*. R Foundation for Statistical Computing, Vienna, Austria. URL
+  https://www.R-project.org/.
 - Rasmussen, C. E., and Williams, C. K. I. (2006). *Gaussian Processes for Machine Learning*
+- Ushey, K. (2021). *renv: Project Environments*. R package version 0.13.2.
+  https://CRAN.R-project.org/package=renv
+- Wickham et al., (2019). Welcome to the tidyverse. *Journal of Open Source Software, 4*(43), 1686, https://doi.org/10.21105/joss.01686
 
 

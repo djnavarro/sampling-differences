@@ -225,7 +225,7 @@ g(y_i | \bm{x}) = \sum_{h^\prime} \phi_{ih} P({\bm \phi}_h | \bm x)
 \hypertarget{implementation-details}{%
 \subsection{Implementation details}\label{implementation-details}}
 
-Implemented in R, used finite hypotheses space consisting of \(5^6 = 15625\) functions. Link to source code. Etc. Default parameter values.
+The model is implemented in R (R Core Team 2020) and uses some functions supplied through tidyverse (Wickham et al 2019). Precise information about the R environment in which computation was performed is available at \url{https://github.com/djnavarro/sampling-differences}, generated using the renv package to (Ushey 2021) to aid future reproducibility. In all modelling exercises, the finite approximate hypothesis space consisted of \(5^6 = 15625\) functions whose values are specified at the six stimulus values corresponding to the stimuli used in the experiment, using five possible probability values \(\phi_i \in \{.1, .3, .5, .7, .9\}\) for all items. Additional documentation for the source code and analyses can be found at the \enquote{sampling-differences} GitHub repository.
 
 \hypertarget{references}{%
 \subsection{References}\label{references}}
@@ -237,7 +237,15 @@ Implemented in R, used finite hypotheses space consisting of \(5^6 = 15625\) fun
 \item
   Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. \emph{Cognitive Science, 36}, 187-223. \url{https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x}
 \item
+  R Core Team (2020). \emph{R: A language and environment for statistical computing}. R Foundation for Statistical Computing, Vienna, Austria. URL
+  \url{https://www.R-project.org/}.
+\item
   Rasmussen, C. E., and Williams, C. K. I. (2006). \emph{Gaussian Processes for Machine Learning}
+\item
+  Ushey, K. (2021). \emph{renv: Project Environments}. R package version 0.13.2.
+  \url{https://CRAN.R-project.org/package=renv}
+\item
+  Wickham et al., (2019). Welcome to the tidyverse. \emph{Journal of Open Source Software, 4}(43), 1686, \url{https://doi.org/10.21105/joss.01686}
 \end{itemize}
 
 \end{document}
