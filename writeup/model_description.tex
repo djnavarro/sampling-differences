@@ -161,19 +161,24 @@ and
 \sigma_{ij} = \left\{ \begin{array}{rl} K(x_i, x_j) & \mbox{ if } i \neq j \\ K(x_i, x_i) + \sigma^2 & \mbox{ if } i = j \end{array}  \right.
 \]
 \noindent
-This prior distribution is described by four parameters:
+In summary, the Gaussian process prior is described by four parameters, which have the following interpretation:
 
 \begin{itemize}
 \tightlist
 \item
-  \(\tau\) describes the baseline correlation between stimuli
+  \(\mu\) is the prior mean/centrality parameter (for \(\phi\)), where \(\mu_i = \mu\) for all \(i\)
 \item
-  \(\rho\) governs the rate at which the correlation decays with psychological distance
+  \(\tau\) is a smoothness parameter and controls the baseline level of smoothness
 \item
-  \(\sigma\) is the inherent noise in the data
+  \(\rho\) is a smoothness parameter and controls how quickly the correlation decays with psychological distance
 \item
-  \(\mu\) is the prior mean, where we assume that \(\mu_i = \mu\) for all \(i\)
+  \(\sigma\) is a prior variance parameter used to specify the extent to which the function can deviate from \(\mu\)
 \end{itemize}
+
+\noindent
+In practice, \(\mu\) and \(sigma\) together play the role of \enquote{pulling} the function toward some value. The intended usage here is to impose a \enquote{regress toward zero} bias on the function: the real world is sparse, and if we sampled an arbitrary property and stimulus of psychological relevance it would be more likely that the stimulus doesn't possess that property: e.g., sample a random fruit (apple, orange, banana, etc) and some random colours (red, orange, black, etc). There are many combinations of these values that lead to property-negative statements (apples are not black, oranges are not green, etc) and only a few that are true (oranges are orange). For more discussion of sparsity biases see Navarro and Perfors (2011).
+
+By way of comparison, \(\tau\) and \(\rho\) are the parameters defining the kernel function \(K\), and together they impose a bias towards smoothness. Stimuli that are near each other in psychological space should have similar inductive properties (Shepard 1987) and these two parameters work together to impose this smoothness.
 
 \hypertarget{the-likelihood-function}{%
 \subsection{The likelihood function}\label{the-likelihood-function}}
@@ -246,10 +251,14 @@ The model is implemented in R (R Core Team 2020) and uses some functions supplie
 \item
   Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. \emph{Cognitive Science, 36}, 187-223. \url{https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x}
 \item
+  Navarro, D. J. and Perfors, A. (2011). Hypothesis generation, the positive test strategy, and sparse categories. \emph{Psychological Review, 118}, 120-34 \url{https://dx.doi.org/10.1037/a0021110}
+\item
   R Core Team (2020). \emph{R: A language and environment for statistical computing}. R Foundation for Statistical Computing, Vienna, Austria. URL
   \url{https://www.R-project.org/}.
 \item
   Rasmussen, C. E., and Williams, C. K. I. (2006). \emph{Gaussian Processes for Machine Learning}
+\item
+  Shepard, R. N. (1987). Toward a universal law of generalization for psychological science. \emph{Science, 237}(4820), 1317-1323
 \item
   Ushey, K. (2021). \emph{renv: Project Environments}. R package version 0.13.2.
   \url{https://CRAN.R-project.org/package=renv}

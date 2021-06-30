@@ -63,12 +63,17 @@ $$
 \sigma_{ij} = \left\{ \begin{array}{rl} K(x_i, x_j) & \mbox{ if } i \neq j \\ K(x_i, x_i) + \sigma^2 & \mbox{ if } i = j \end{array}  \right.
 $$
 \noindent
-This prior distribution is described by four parameters:
+In summary, the Gaussian process prior is described by four parameters, which have the following interpretation:
 
-- $\tau$ describes the baseline correlation between stimuli
-- $\rho$ governs the rate at which the correlation decays with psychological distance
-- $\sigma$ is the inherent noise in the data 
-- $\mu$ is the prior mean, where we assume that $\mu_i = \mu$ for all $i$
+- $\mu$ is the prior mean/centrality parameter (for $\phi$), where $\mu_i = \mu$ for all $i$
+- $\tau$ is a smoothness parameter and controls the baseline level of smoothness
+- $\rho$ is a smoothness parameter and controls how quickly the correlation decays with psychological distance
+- $\sigma$ is a prior variance parameter used to specify the extent to which the function can deviate from $\mu$
+
+\noindent
+In practice, $\mu$ and $sigma$ together play the role of "pulling" the function toward some value. The intended usage here is to impose a "regress toward zero" bias on the function: the real world is sparse, and if we sampled an arbitrary property and stimulus of psychological relevance it would be more likely that the stimulus doesn't possess that property: e.g., sample a random fruit (apple, orange, banana, etc) and some random colours (red, orange, black, etc). There are many combinations of these values that lead to property-negative statements (apples are not black, oranges are not green, etc) and only a few that are true (oranges are orange). For more discussion of sparsity biases see Navarro and Perfors (2011). 
+
+By way of comparison, $\tau$ and $\rho$ are the parameters defining the kernel function $K$, and together they impose a bias towards smoothness. Stimuli that are near each other in psychological space should have similar inductive properties (Shepard 1987) and these two parameters work together to impose this smoothness.
 
 ## The likelihood function
 
@@ -128,9 +133,11 @@ The model is implemented in R (R Core Team 2020) and uses some functions supplie
   https://github.com/crsh/papaja
 - Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. *Cognitive Psychology, 113*. https://doi.org/10.1016/j.cogpsych.2019.05.003
 - Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. *Cognitive Science, 36*, 187-223. https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x
+- Navarro, D. J. and Perfors, A. (2011). Hypothesis generation, the positive test strategy, and sparse categories. *Psychological Review, 118*, 120-34 https://dx.doi.org/10.1037/a0021110
 - R Core Team (2020). *R: A language and environment for statistical computing*. R Foundation for Statistical Computing, Vienna, Austria. URL
   https://www.R-project.org/.
 - Rasmussen, C. E., and Williams, C. K. I. (2006). *Gaussian Processes for Machine Learning*
+- Shepard, R. N. (1987). Toward a universal law of generalization for psychological science. *Science, 237*(4820), 1317-1323
 - Ushey, K. (2021). *renv: Project Environments*. R package version 0.13.2.
   https://CRAN.R-project.org/package=renv
 - Wen, Y. P., Desai, S. C., Navarro, D. J., & Hayes, B. K. (in preparation). *Who is sensitive to selection biases in inductive reasoning?*
