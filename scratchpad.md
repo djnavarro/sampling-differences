@@ -1,4 +1,17 @@
 
+## 29 June 2021
+
+- Model updated to more closely match the GP model from Hayes et al (2019).
+  The main difference in implementation is that I don't use JAGS to sample from
+  the posterior over functions/hypotheses. Instead a fixed and "small" (~15000)
+  set of functions is used to provide a crude grid approximation. This works 
+  only because we aren't interested in the posterior distribution itself, only
+  the posterior mean at each of the test stimulus locations.
+- Note: the default parameters currently specified for `sampling_frames_model()`
+  are not precisely identical to those in Hayes et al. I did a small amount of
+  hand tuning against the data from Experiment 1, but nothing particularly 
+  thorough.
+
 ## 21 September 2020
 
 - Initial model constructed as a simplified version of the Gaussian Process 

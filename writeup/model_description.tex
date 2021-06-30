@@ -1,0 +1,287 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  english,
+  doc]{apa6}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Appendix B: Model specification},
+  pdflang={en-EN},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+% Manuscript styling
+\usepackage{upgreek}
+\captionsetup{font=singlespacing,justification=justified}
+
+% Table formatting
+\usepackage{longtable}
+\usepackage{lscape}
+% \usepackage[counterclockwise]{rotating}   % Landscape page setup for large tables
+\usepackage{multirow}		% Table styling
+\usepackage{tabularx}		% Control Column width
+\usepackage[flushleft]{threeparttable}	% Allows for three part tables with a specified notes section
+\usepackage{threeparttablex}            % Lets threeparttable work with longtable
+
+% Create new environments so endfloat can handle them
+% \newenvironment{ltable}
+%   {\begin{landscape}\begin{center}\begin{threeparttable}}
+%   {\end{threeparttable}\end{center}\end{landscape}}
+\newenvironment{lltable}{\begin{landscape}\begin{center}\begin{ThreePartTable}}{\end{ThreePartTable}\end{center}\end{landscape}}
+
+% Enables adjusting longtable caption width to table width
+% Solution found at http://golatex.de/longtable-mit-caption-so-breit-wie-die-tabelle-t15767.html
+\makeatletter
+\newcommand\LastLTentrywidth{1em}
+\newlength\longtablewidth
+\setlength{\longtablewidth}{1in}
+\newcommand{\getlongtablewidth}{\begingroup \ifcsname LT@\roman{LT@tables}\endcsname \global\longtablewidth=0pt \renewcommand{\LT@entry}[2]{\global\advance\longtablewidth by ##2\relax\gdef\LastLTentrywidth{##2}}\@nameuse{LT@\roman{LT@tables}} \fi \endgroup}
+
+% \setlength{\parindent}{0.5in}
+% \setlength{\parskip}{0pt plus 0pt minus 0pt}
+
+% \usepackage{etoolbox}
+\makeatletter
+\patchcmd{\HyOrg@maketitle}
+  {\section{\normalfont\normalsize\abstractname}}
+  {\section*{\normalfont\normalsize\abstractname}}
+  {}{\typeout{Failed to patch abstract.}}
+\makeatother
+\shorttitle{Model specification}
+\author{.}
+\affiliation{\phantom{a}}
+\authornote{This note specifies the content of Appendix B to Wen et al (in preparation), and is intended to be read as part of that paper. It was written by Danielle Navarro (d.navarro@unsw.edu.au), and prepared using the papaja package (Aust \& Barth 2020) for R markdown (Xie, Allaire \& Grolemund 2019).
+
+
+}
+\usepackage{lineno}
+
+\linenumbers
+\usepackage{csquotes}
+\usepackage{bm}
+\ifxetex
+  % Load polyglossia as late as possible: uses bidi with RTL langages (e.g. Hebrew, Arabic)
+  \usepackage{polyglossia}
+  \setmainlanguage[]{english}
+\else
+  \usepackage[shorthands=off,main=english]{babel}
+\fi
+
+\title{Appendix B: Model specification}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+The model used in this paper is a simplified version of the one described by Hayes et al (2019; see their Appendix B). In this appendix we present a formal specification of the model (Cooper \& Guest 2014), along with some comments on our implementation in R. The motivation for the model is to consider how one might learn an arbitrary smooth function \(\phi : \mathcal{X} \rightarrow [0, 1]\) that assigns to every possible stimulus \(x \in \mathcal{X}\) some subjective belief that \(x\) possesses the unknown property. In the general case the stimulus space \(\mathcal{X}\) can be richly structured, but in the current setting we can consider stimuli that vary only on a single continuous dimension.
+
+\hypertarget{the-prior-distribution}{%
+\subsection{The prior distribution}\label{the-prior-distribution}}
+
+\noindent
+We specify a prior distribution over smooth functions in two parts. First, it is convenient to define a logit-transformed version of the function \(f : \mathbb{R} \rightarrow \mathbb{R}\), and define the prior on this transformed space:
+
+\[
+f(x) = \log \frac{\phi(x)}{1 - \phi(x)}
+\]
+After adopting this representation it is relatively simple to use the Gaussian process (see Rasmussen \& Williams 2006) to specify a prior over possible functions \(f\). In particular, although the Gaussian process is used to sample continuous functions \(f\), it has the property that every finite dimensional marginalisation of the function yields a multivariate Gaussian distribution. What this means is that because we are interested in the values of \(f\) only at those stimulus locations that are used in the experiment, we can work directly with this marginal prior and sample values only at those \(n\) points (where \(n = 6\) in this case). Letting \(\bm{\mu} = (\mu_1, \ldots, \mu_n)\) denote the mean vector at these points and letting \(\bm{\Sigma} = [\sigma_{ij}]\) for \(i, j \in 1, \ldots, n\) define the covariance matrix, this marginal prior may be written:
+
+\[
+f(x_i) \sim \mbox{Normal}(\bm\mu, \bm\Sigma)
+\]
+
+\noindent
+The covariance matrix is used to control the smoothness of the inferred function \(f\) and defined by the kernel function \(\sigma_{ij} = K(x_i, x_j)\). Following the logic outlined by Hayes et al, we apply a radial basis kernel function kernel in which the correlation diminishes as a Gaussian function of the distance \(d_{ij}\) between items in psychological space:
+
+\[
+K(x_i, x_j) = \tau^2 \exp\left(-\rho {d_{ij}}^2\right)
+\]
+and
+\[
+\sigma_{ij} = \left\{ \begin{array}{rl} K(x_i, x_j) & \mbox{ if } i \neq j \\ K(x_i, x_i) + \sigma^2 & \mbox{ if } i = j \end{array}  \right.
+\]
+\noindent
+In summary, the Gaussian process prior is described by four parameters, which have the following interpretation:
+
+\begin{itemize}
+\tightlist
+\item
+  \(\mu\) is the prior mean/centrality parameter (for \(\phi\)), where \(\mu_i = \mu\) for all \(i\)
+\item
+  \(\tau\) is a smoothness parameter and controls the baseline level of smoothness
+\item
+  \(\rho\) is a smoothness parameter and controls how quickly the correlation decays with psychological distance
+\item
+  \(\sigma\) is a prior variance parameter used to specify the extent to which the function can deviate from \(\mu\)
+\end{itemize}
+
+\noindent
+In practice, \(\mu\) and \(sigma\) together play the role of \enquote{pulling} the function toward some value. The intended usage here is to impose a \enquote{regress toward zero} bias on the function: the real world is sparse, and if we sampled an arbitrary property and stimulus of psychological relevance it would be more likely that the stimulus doesn't possess that property: e.g., sample a random fruit (apple, orange, banana, etc) and some random colours (red, orange, black, etc). There are many combinations of these values that lead to property-negative statements (apples are not black, oranges are not green, etc) and only a few that are true (oranges are orange). For more discussion of sparsity biases see Navarro and Perfors (2011).
+
+By way of comparison, \(\tau\) and \(\rho\) are the parameters defining the kernel function \(K\), and together they impose a bias towards smoothness. Stimuli that are near each other in psychological space should have similar inductive properties (Shepard 1987) and these two parameters work together to impose this smoothness.
+
+\hypertarget{the-likelihood-function}{%
+\subsection{The likelihood function}\label{the-likelihood-function}}
+
+\noindent
+The Gaussian process prior supplies a mechanism for a Bayesian reasoner to impose two qualitatively-reasonable biases: smoothness and sparsity. What it does not provide is a learning method: how should the learner revise their prior beliefs when they observe stimuli and their properties? That role is played by the likelihood function, which describes the learners beliefs about how these observations were sampled. When constructing a likelhood, we first consider the \enquote{strong versus weak sampling} distinction introduced by Tenenbaum and Griffiths (2001). According to strong sampling, the observations are selected (somewhat randomly) \emph{only} from a subset of possibilities that satisfies some criterion. Consider, then, a participant who has observed stimulus \(x\) that is property-positve, and who understands the statistical implications of the sampling frame manipulation used in the experiment, and adopts a likelihood function that derived from a consideration of this sampling process:
+
+\begin{itemize}
+\item
+  Under \textbf{property sampling} the learner assumes that this item was chosen uniformly at random from the set of property-positive stimuli. If \(\phi_i\) denotes the probability (or proportion) of \(x_i\) items (e.g., rocks of this specific size) that are plaxium positive, and (for simplicity) assume that the base rates of all stimulus types are the same, then the probability that a random plaxium-positive stimulus will turn out to have value \(x_i\) is
+  \[
+  P(x_i | \bm{\phi}) = \frac{\phi_i}{\sum_j \phi_j}
+  \]
+  where the sum in the denominator is taken across all possible stimuli (for these designs that's just the six test items).
+\item
+  Under \textbf{category sampling} the items are sampled uniformly at random from items that belong to the category (in this case, the category consists of 2 of the 6 test items only). If there are \(|c|\) items in the category that have the same base rates, then the probability of the stimulus value \(x_i\) is \(1/|c|\). The probability that the item is also property positive depends on the value of \(\phi_i\) and so
+  \[
+  P(x_i | \bm{\phi}) = \frac{\phi_i}{|c|}
+  \]
+\end{itemize}
+
+\noindent  
+This participant will apply a different likelihood function depending on the sampling condition. In contrast, a participant who does not consider the specifics of the sampling condition might (act as if they) believe that there is no pattern at all to how the stimuli are selected:
+
+\begin{itemize}
+\item
+  Under \textbf{weak sampling}, items are sampled uniformly at random from all stimuli included in the experiment. In other words, it's identical to category sampling except that the \enquote{category} is larger. If \(|x|\) denotes the total number of items (in this case 6)
+
+  \[
+  P(x_i | \bm{\phi}) = \frac{\phi_i}{|x|}
+  \]
+  An important point to note is that, because they differ only by a constant that disappears later during the normalisation phase of Bayesian belief updating (i.e., applying the denominator term in Bayes' rule), weak sampling and category sampling are in fact indistinguishable for this design.
+\end{itemize}
+
+\noindent
+In practice it is unlikely that people divide neatly into two groups. Rather, we expect there to be a continuum that describes the extent to which people are sensitive to a sampling manipulation. Navarro et al (2012) formalised this idea slightly by arguing that people might adopt a \enquote{mixed} sampling model where items are strongly sampled (be that property or category) with probability \(\theta\), and weakly sampled with probability \(1-\theta\). The version of the model we implement includes this \(\theta\) parameter: however, because weak and category sampling are identical in this design, the only effect that \(\theta\) has is to change model behaviour in the property sampling condition. Setting \(\theta = 0\) produces a null effect of sampling frame (i.e., model predicts no difference between category and property sampling, and that both conditions should look like weak/category sampling), whereas \(\theta = 1\) produces the largest possible effect.
+
+\hypertarget{computing-generalisation-gradients}{%
+\subsection{Computing generalisation gradients}\label{computing-generalisation-gradients}}
+
+\noindent
+Suppose the learner has seen a set of stimulus items \(\bm x\) that are property-positive. To complete the model specification, we describe how the generalisation function emerges from the Bayesian model implied by a given prior \(P(\bm{\phi}_h)\) over possible functions, and a likelihood \(P(\bm x | \bm{\phi}_h)\) that describes the probability of the learner observing \(\bm x\) if \(\bm{\phi}_h\) is the true function. Applying Bayes' rule gives the posterior distribution
+
+\[ 
+P({\bm \phi}_h | \bm x) = \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\int P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h) \ dh^\prime}
+\]
+
+\noindent
+The underlying hypothesis space over possible functions \(\bm \phi \in \mathcal H\) is continuous so the denominator isegrates over all possible functions. In our implementation, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by considering only a finite set of possibilities, so the inference is written:
+
+\[ 
+P({\bm \phi}_h | \bm x) \approx \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\sum_{h^\prime} P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}
+\]
+
+\noindent
+This application of Bayes rule provides a posterior distribution over possible hypotheses as to the identity of the generalisation function, where the learner remains uncertain as to which function applies. Viewing this as a prediction problem, a natural way for the learner to estimate the generalisation probability \(g(y_i | \bm{x})\) (i.e., the probability that new item \(y_i\) possesses the property given that the items \(\bm x\) possess the property) is to compute the posterior expected value of \(\phi_i\). For a discrete hypothesis space:
+
+\[
+g(y_i | \bm{x}) = \sum_{h^\prime} \phi_{ih} P({\bm \phi}_h | \bm x)
+\]
+This completes the formal statement of the model.
+
+\hypertarget{implementation-details}{%
+\subsection{Implementation details}\label{implementation-details}}
+
+\noindent
+For the purposes of the current paper, the model was implemented in R (R Core Team 2020) with some reliance on tidyverse functions (Wickham et al 2019). All details and documentation about the model and the R environment used to run analyses are available at the following repository: \url{https://github.com/djnavarro/sampling-differences}. Details regarding the environment weregenerated using the renv package (Ushey 2021) to aid future reproducibility. In all modelling exercises, the finite approximate hypothesis space consisted of \(5^6 = 15625\) functions whose values are specified at the six stimulus values corresponding to the stimuli used in the experiment, using five possible probability values \(\phi_i \in \{.1, .3, .5, .7, .9\}\) for all items.
+
+\hypertarget{references}{%
+\subsection{References}\label{references}}
+
+\begin{itemize}
+\tightlist
+\item
+  Aust, F. \& Barth, M. (2020). \emph{papaja: Prepare reproducible APA journal
+  articles with R Markdown}. R package version 0.1.0.9942, retrieved from
+  \url{https://github.com/crsh/papaja}
+\item
+  Cooper, R. P. and Guest, O. (2014). Implementations are not specifications: Specification, replication and experimentation in computational cognitive modeling. \emph{Cognitive Systems Research, 27}, 42-49. \url{https://doi.org/10.1016/j.cogsys.2013.05.001}
+\item
+  Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. \emph{Cognitive Psychology, 113}. \url{https://doi.org/10.1016/j.cogpsych.2019.05.003}
+\item
+  Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. \emph{Cognitive Science, 36}, 187-223. \url{https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x}
+\item
+  Navarro, D. J. and Perfors, A. (2011). Hypothesis generation, the positive test strategy, and sparse categories. \emph{Psychological Review, 118}, 120-34 \url{https://dx.doi.org/10.1037/a0021110}
+\item
+  R Core Team (2020). \emph{R: A language and environment for statistical computing}. R Foundation for Statistical Computing, Vienna, Austria. URL
+  \url{https://www.R-project.org/}.
+\item
+  Rasmussen, C. E., and Williams, C. K. I. (2006). \emph{Gaussian Processes for Machine Learning}
+\item
+  Shepard, R. N. (1987). Toward a universal law of generalization for psychological science. \emph{Science, 237}(4820), 1317-1323
+\item
+  Tenenbaum, J. B., and Griffiths, T. L. (2001). Generalization, similarity, and Bayesian inference. \emph{Behavioral and Brain Sciences, 24}(4), 629-64
+\item
+  Ushey, K. (2021). \emph{renv: Project Environments}. R package version 0.13.2.
+  \url{https://CRAN.R-project.org/package=renv}
+\item
+  Wen, Y. P., Desai, S. C., Navarro, D. J., \& Hayes, B. K. (in preparation). \emph{Who is sensitive to selection biases in inductive reasoning?}
+\item
+  Wickham et al., (2019). Welcome to the tidyverse. \emph{Journal of Open Source Software, 4}(43), 1686, \url{https://doi.org/10.21105/joss.01686}
+\item
+  Xie , Y., Allaire, J. J., and Grolemund, G. (2018). \emph{R Markdown: The Definitive Guide}. Chapman and Hall/CRC. ISBN 9781138359338. URL \url{https://bookdown.org/yihui/rmarkdown}.
+\end{itemize}
+
+\end{document}
