@@ -1,0 +1,301 @@
+---
+title: "Analysis"
+author: "Danielle Navarro"
+date: "30-Jun-2021"
+output:
+  rmarkdown::html_document:
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+source(here::here("models", "sampling_frames_model.R"))
+`%>%` <- magrittr::`%>%`
+```
+
+## Aggregate level
+
+To begin, let's import the data and examine it at an aggregate level. Here's the data:
+
+```{r import-data, message=FALSE}
+import_data <- function(experiment) {
+  ci_quantile <- function(x, quantile) {
+    mean(x) + qt(quantile, length(x) - 1) * sd(x) / sqrt(length(x) - 1)
+  }
+  here::here("data", paste0(experiment, ".csv")) %>% 
+    readr::read_csv() %>% 
+    dplyr::group_by(sample_size, sampling_frame, test_item) %>% 
+    dplyr::summarise(
+      ci_lower = ci_quantile(response / 10, .025),
+      ci_upper = ci_quantile(response / 10, .975),
+      response = mean(response / 10)
+    ) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(source = "human", exp = experiment)
+}
+
+human_aggregate <- dplyr::bind_rows(import_data("exp1"), import_data("exp2"))
+human_aggregate
+```
+
+Here is a simple visualisation that plots the mean and 95% confidence interval for the average response in every condition in and both experiments. (The confidence intervals here are Student intervals calculated independently for each condition)
+
+```{r data-visualisation}
+ggplot2::ggplot(
+  data = human_aggregate %>% dplyr::mutate(
+    exp = exp %>% stringr::str_replace_all("exp", "Experiment "),
+    sampling_frame = sampling_frame %>% stringr::str_to_sentence()
+  ), 
+  mapping = ggplot2::aes(
+    x = test_item, 
+    y = response,
+    colour = factor(sample_size),
+    group = sample_size
+  )
+) +
+  ggplot2::facet_grid(
+    rows = ggplot2::vars(exp),
+    cols = ggplot2::vars(sampling_frame)
+  ) + 
+  ggplot2::geom_path(
+    show.legend = FALSE,
+    size = .25,
+    linetype = "dashed",
+    position = ggplot2::position_dodge2(
+      width = 0.5, 
+      padding = 0.5
+    )
+  ) + 
+  ggplot2::geom_pointrange(
+    mapping = ggplot2::aes(
+      ymin = ci_lower,
+      ymax = ci_upper,
+    ),
+    position = ggplot2::position_dodge2(
+      width = 0.5, 
+      padding = 0.5
+    )
+  ) +
+  ggplot2::theme_bw() + 
+  ggplot2::coord_cartesian(ylim = c(0, 1)) + 
+  ggplot2::scale_x_continuous(
+    name = "Test stimulus",
+    breaks = 1:6, 
+    minor_breaks = NULL
+  ) + 
+  ggplot2::scale_y_continuous(
+    name = "Response",
+    minor_breaks = NULL
+  ) + 
+  ggplot2::scale_color_brewer(
+    name = "Sample size", 
+    palette = "Dark2"
+  )
+```
+
+This visualisation oversimplifies a little as it doesn't consider systematic individual differences and reports only aggregated data, but it is sufficient for the moment. As a point of comparison, here is an example of the kind of behaviour one might expect from the model:
+
+```{r model-visualisation, fig.height=3}
+model_plot <- function(model) {
+  ggplot2::ggplot(
+    data = model %>% dplyr::mutate(
+      sampling_frame = sampling_frame %>% stringr::str_to_sentence()
+    ), 
+    mapping = ggplot2::aes(
+      x = test_item, 
+      y = response,
+      colour = factor(sample_size),
+      group = sample_size
+    )
+  ) +
+    ggplot2::facet_grid(
+      cols = ggplot2::vars(sampling_frame)
+    ) + 
+    ggplot2::geom_path(
+      show.legend = FALSE,
+      size = .25,
+      linetype = "dashed",
+      position = ggplot2::position_dodge2(
+        width = 0.5, 
+        padding = 0.5
+      )
+    ) + 
+    ggplot2::geom_point(
+      position = ggplot2::position_dodge2(
+        width = 0.5, 
+        padding = 0.5
+      ),
+      size = 3
+    ) +
+    ggplot2::theme_bw() + 
+    ggplot2::coord_cartesian(ylim = c(0, 1)) + 
+    ggplot2::scale_x_continuous(
+      name = "Test stimulus",
+      breaks = 1:6, 
+      minor_breaks = NULL
+    ) + 
+    ggplot2::scale_y_continuous(
+      name = "Response",
+      minor_breaks = NULL
+    ) + 
+    ggplot2::scale_color_brewer(
+      name = "Sample size", 
+      palette = "Dark2"
+    )
+}
+
+sampling_frames_model(theta = 1, tau = 2, rho = .5, sigma = 1, mu = .05) %>% 
+  model_plot()
+```
+
+The qualitative pattern of results produced by the model is very similar to that produced by human participants. We define this qualitative pattern in the following way. First, for simplicity we group test items 1 and 2 together as the "near" items in the sense that they have the same stimulus values as the items shown to people during training. Similarly, we can group test items 3-6 as the "distant" items as they all fall outside the range of stimulus values shown during training. As a general rule, responses to near items are higher than responses to distant items, but this effect is not especially interesting: it merely reflects the fact that generalisation decreases as a function of dissimilarity, which is of course to be expected and is one of the oldest and most robust effects in the literature. The figures above illustrate that this effect exists in our data and in the model predictions, but it is of course a weak test.
+
+The effect of theoretical interest is the following "three way" interaction:
+
+- In category sampling, increasing sample size increases the response to all items (near and distant)
+- In property sampling, increasing sample size increases the response to near items
+- In property sampling, increasing sample size *decreases* the response to distant items
+
+The model prediction is that if people are sensitive to the sampling manipulation, they will show that interaction pattern. However, if a person is insensitive to the sampling manipulation, it predicts something closer to this:
+
+```{r, fig.height=3}
+sampling_frames_model(theta = 0, tau = 2, rho = .5, sigma = 1, mu = .05) %>% 
+  model_plot()
+```
+
+
+## Individual subject level
+
+
+```{r import-data-2, message=FALSE}
+import_data <- function(experiment) {
+  here::here("data", paste0(experiment, ".csv")) %>% 
+    readr::read_csv() %>% 
+    dplyr::mutate(
+      response = response / 10,
+      source = "human", 
+      exp = experiment,
+      id = paste0(exp, "_", id),
+      stimulus = dplyr::case_when(
+        test_item %in% 1:2 ~ "near", 
+        test_item %in% 3:6 ~ "distant",
+        TRUE ~ NA_character_
+      )
+    )
+}
+
+human_individual <- dplyr::bind_rows(
+  import_data("exp1"), 
+  import_data("exp2")
+)
+
+human_ss_effect <- human_individual %>% 
+  dplyr::group_by(sampling_frame, stimulus, id, exp) %>% 
+  dplyr::summarise(ss_effect = (lm(response ~ sample_size))$coef[2]) %>% 
+  dplyr::ungroup()
+```
+
+A simple way to examine the data at an individual subject level is to import it with no aggregation at all, then estimate the effect of "adding one training item" on the generalisation response by fitting a linear regression separately for each participant, stimulus (near or distant) and sampling type (category or property). This will of course produce a very noisy estimate for a single person. Our interest here is looking at the distribution of these coeffcients in each condition:
+
+
+```{r visualise-data-2, fig.height=8}
+ggplot2::ggplot(
+  data = human_ss_effect %>% dplyr::mutate(
+    exp = exp %>% stringr::str_replace_all("exp", "Experiment "),
+    sampling_frame = sampling_frame %>% stringr::str_to_sentence(),
+    stimulus = stimulus %>% 
+      stringr::str_to_sentence() %>% 
+      factor(levels = c("Near", "Distant")),
+  ),
+  mapping = ggplot2::aes(
+    x = stimulus,
+    y = ss_effect
+  )
+) + 
+  ggplot2::facet_grid(
+    rows = ggplot2::vars(exp),
+    cols = ggplot2::vars(sampling_frame)
+  ) +
+  ggplot2::geom_violin(fill = "grey80") +
+  ggplot2::geom_hline(
+    yintercept = 0, 
+    colour = "black",
+    linetype = "dashed"
+  ) + 
+  ggplot2::geom_jitter(
+    mapping = ggplot2::aes(colour = ss_effect > 0),
+    show.legend = FALSE,
+    width = .1,
+    height = 0,
+    size = 2,
+    alpha = .5
+  ) +
+  ggplot2::geom_point(
+    stat = "summary",
+    fun = mean,
+    size = 4
+  ) +
+  ggplot2::theme_bw() + 
+  ggplot2::scale_x_discrete(name = "Stimulus type") + 
+  ggplot2::scale_y_continuous(
+    name = "Sample size effect on response",
+    minor_breaks = NULL
+  ) + 
+  ggplot2::theme(panel.grid.major.y = ggplot2::element_blank()) + 
+  ggplot2::scale_color_brewer(
+    name = "Sample size", 
+    palette = "Set1"
+  ) 
+```
+
+
+Here is a quick tabulation. For each of the four conditions (cd = category distant, etc...), did the participant increase (1) or decrease (0) their judgements as a function of sample size: 
+
+```{r}
+patterns <- human_ss_effect %>% 
+  dplyr::mutate(upward = ss_effect > 0) %>% 
+  tidyr::unite("case", sampling_frame, stimulus) %>% 
+  tidyr::pivot_wider(id_cols = c(id, exp), names_from = case, values_from = upward) %>% 
+  dplyr::select(-id) %>% 
+  dplyr::mutate(
+    cd_cn_pd_pn = paste(
+      as.numeric(category_distant), 
+      as.numeric(category_near), 
+      as.numeric(property_distant), 
+      as.numeric(property_near), 
+      sep = "_"
+    )
+  ) %>% 
+  dplyr::select(exp, cd_cn_pd_pn) %>% 
+  dplyr::group_by(exp) %>% 
+  dplyr::count(cd_cn_pd_pn)
+
+patterns %>% 
+  dplyr::filter(exp == "exp1") %>%   
+  dplyr::arrange(-n)
+
+patterns %>% 
+  dplyr::filter(exp == "exp2") %>%   
+  dplyr::arrange(-n)
+```
+
+In this output, the "canonical" pattern predicted by the sampling frame model is 1_1_0_1, namely that the effect is positive in every condition except the property-distant. Happily for us this is the most common pattern in each case. 
+
+What about if there were no effect of the frame manipulation? That's not quite so clear. The model suggests that we should expect that 1_1_1_1 would be the typical pattern, but that is based on the idea that "weak" sampling will push everything upwards in this task. But at a minimum we would expect conditions of the form "a_b_a_b" (i.e., always the same direction for property and category) where a and b may or may not be different
+
+
+```{r}
+ human_ss_effect %>% 
+  dplyr::mutate(upward = ss_effect > 0) %>% 
+  tidyr::unite("case", sampling_frame, stimulus) %>% 
+  tidyr::pivot_wider(id_cols = c(id, exp), names_from = case, values_from = upward) %>% 
+  dplyr::mutate(pattern_type = dplyr::case_when(
+    category_distant == TRUE & category_near == TRUE & property_distant == FALSE & property_near == TRUE ~ "canonical_frame",
+    category_distant == property_distant & category_near == property_near ~ "no_frame_effect",
+    TRUE ~ "other"
+  )) %>% 
+  dplyr::group_by(exp) %>% 
+  dplyr::count(pattern_type) 
+
+```
+These numbers should be compared to the base rates expected by chance: only 1 of 16 patterns matches the canonical frame effect 4 of 16 patterns match the no-frame patterns, and the remaining 11 of 16 fall into the "other" bin.
