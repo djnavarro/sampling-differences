@@ -1,4 +1,8 @@
 
+## 30 June 2021
+
+- Tidies my original analysis.
+
 ## 29 June 2021
 
 - Model updated to more closely match the GP model from Hayes et al (2019).
