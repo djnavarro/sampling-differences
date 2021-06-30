@@ -144,7 +144,7 @@ model_plot <- function(model) {
     )
 }
 
-sampling_frames_model(theta = 1, tau = 2, rho = .5, sigma = 1, mu = .05) %>% 
+sampling_frames_model(tau = 2, rho = .5, sigma = 1, mu = .05) %>% 
   model_plot()
 ```
 
@@ -156,13 +156,7 @@ The effect of theoretical interest is the following "three way" interaction:
 - In property sampling, increasing sample size increases the response to near items
 - In property sampling, increasing sample size *decreases* the response to distant items
 
-The model prediction is that if people are sensitive to the sampling manipulation, they will show that interaction pattern. However, if a person is insensitive to the sampling manipulation, it predicts something closer to this:
-
-```{r, fig.height=3}
-sampling_frames_model(theta = 0, tau = 2, rho = .5, sigma = 1, mu = .05) %>% 
-  model_plot()
-```
-
+The model prediction is that if people are sensitive to the sampling manipulation, they will show that interaction pattern. 
 
 ## Individual subject level
 
@@ -195,7 +189,7 @@ human_ss_effect <- human_individual %>%
   dplyr::ungroup()
 ```
 
-A simple way to examine the data at an individual subject level is to import it with no aggregation at all, then estimate the effect of "adding one training item" on the generalisation response by fitting a linear regression separately for each participant, stimulus (near or distant) and sampling type (category or property). This will of course produce a very noisy estimate for a single person. Our interest here is looking at the distribution of these coeffcients in each condition:
+A simple way to examine the data at an individual subject level is to import it with no aggregation at all, then estimate the effect of "adding one training item" on the generalisation response by fitting a linear regression separately for each participant, stimulus (near or distant) and sampling type (category or property). This will of course produce a very noisy estimate for a single person. Our interest here is looking at the distribution of these coefficients in each condition:
 
 
 ```{r visualise-data-2, fig.height=8}
