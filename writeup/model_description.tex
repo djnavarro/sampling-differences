@@ -209,7 +209,7 @@ P({\bm \phi}_h | \bm x) = \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\int P(\b
 \]
 
 \noindent
-The underlying hypothesis space over possible functions \(\bm \phi \in \mathcal H\) is continuous so the denominator isegrates over all possible functions. In our implementation, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by considering only a finite set of possibilities, so the inference is written:
+The underlying hypothesis space over possible functions \(\bm \phi \in \mathcal H\) is continuous so the denominator integrates over all possible functions. In our implementation, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by considering only a finite set of possibilities, so the inference is written:
 
 \[ 
 P({\bm \phi}_h | \bm x) \approx \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\sum_{h^\prime} P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}
