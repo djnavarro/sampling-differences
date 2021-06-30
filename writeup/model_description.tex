@@ -37,7 +37,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
-  pdftitle={Appendix B: Model description},
+  pdftitle={Appendix B: Model specification},
   pdflang={en-EN},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
@@ -105,7 +105,7 @@
   {\section*{\normalfont\normalsize\abstractname}}
   {}{\typeout{Failed to patch abstract.}}
 \makeatother
-\shorttitle{Model description}
+\shorttitle{Model specification}
 \author{.}
 \affiliation{\phantom{a}}
 \authornote{This note specifies the content of Appendix B to Wen et al (in preparation), and is intended to be read as part of that paper. It was written by Danielle Navarro (d.navarro@unsw.edu.au), and prepared using the papaja package (Aust \& Barth 2020) for R markdown (Xie, Allaire \& Grolemund 2019).
@@ -125,7 +125,7 @@
   \usepackage[shorthands=off,main=english]{babel}
 \fi
 
-\title{Appendix B: Model description}
+\title{Appendix B: Model specification}
 
 \date{}
 
@@ -133,7 +133,7 @@
 \maketitle
 
 \noindent
-The model used in this paper is a simplified version of the one described by Hayes et al (2019; see their Appendix B). The motivation for the model is to consider how one might learn an arbitrary smooth function \(\phi : \mathcal{X} \rightarrow [0, 1]\) that assigns to every possible stimulus \(x \in \mathcal{X}\) some subjective belief that \(x\) possesses the unknown property. In the general case the stimulus space \(\mathcal{X}\) can be richly structured, but in the current setting we can consider stimuli that vary only on a single continuous dimension.
+The model used in this paper is a simplified version of the one described by Hayes et al (2019; see their Appendix B). In this appendix we present a formal specification of the model (Cooper \& Guest 2014), along with some comments on our implementation in R. The motivation for the model is to consider how one might learn an arbitrary smooth function \(\phi : \mathcal{X} \rightarrow [0, 1]\) that assigns to every possible stimulus \(x \in \mathcal{X}\) some subjective belief that \(x\) possesses the unknown property. In the general case the stimulus space \(\mathcal{X}\) can be richly structured, but in the current setting we can consider stimuli that vary only on a single continuous dimension.
 
 \hypertarget{the-prior-distribution}{%
 \subsection{The prior distribution}\label{the-prior-distribution}}
@@ -246,6 +246,8 @@ The model is implemented in R (R Core Team 2020) and uses some functions supplie
   Aust, F. \& Barth, M. (2020). \emph{papaja: Prepare reproducible APA journal
   articles with R Markdown}. R package version 0.1.0.9942, retrieved from
   \url{https://github.com/crsh/papaja}
+\item
+  Cooper, R. P. and Guest, O. (2014). Implementations are not specifications: Specification, replication and experimentation in computational cognitive modeling. \emph{Cognitive Systems Research, 27}, 42-49. \url{https://doi.org/10.1016/j.cogsys.2013.05.001}
 \item
   Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. \emph{Cognitive Psychology, 113}. \url{https://doi.org/10.1016/j.cogpsych.2019.05.003}
 \item

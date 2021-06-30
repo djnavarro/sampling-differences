@@ -1,6 +1,6 @@
 ---
-title             : "Appendix B: Model description"
-shorttitle        : "Model description"
+title             : "Appendix B: Model specification"
+shorttitle        : "Model specification"
 
 author: 
   - name          : "."
@@ -36,7 +36,7 @@ knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```
 
 \noindent
-The model used in this paper is a simplified version of the one described by Hayes et al (2019; see their Appendix B). The motivation for the model is to consider how one might learn an arbitrary smooth function $\phi : \mathcal{X} \rightarrow [0, 1]$ that assigns to every possible stimulus $x \in \mathcal{X}$ some subjective belief that $x$ possesses the unknown property. In the general case the stimulus space $\mathcal{X}$ can be richly structured, but in the current setting we can consider stimuli that vary only on a single continuous dimension.
+The model used in this paper is a simplified version of the one described by Hayes et al (2019; see their Appendix B). In this appendix we present a formal specification of the model (Cooper & Guest 2014), along with some comments on our implementation in R. The motivation for the model is to consider how one might learn an arbitrary smooth function $\phi : \mathcal{X} \rightarrow [0, 1]$ that assigns to every possible stimulus $x \in \mathcal{X}$ some subjective belief that $x$ possesses the unknown property. In the general case the stimulus space $\mathcal{X}$ can be richly structured, but in the current setting we can consider stimuli that vary only on a single continuous dimension.
 
 ## The prior distribution
 
@@ -131,6 +131,7 @@ The model is implemented in R (R Core Team 2020) and uses some functions supplie
 - Aust, F. & Barth, M. (2020). *papaja: Prepare reproducible APA journal
   articles with R Markdown*. R package version 0.1.0.9942, retrieved from
   https://github.com/crsh/papaja
+- Cooper, R. P. and Guest, O. (2014). Implementations are not specifications: Specification, replication and experimentation in computational cognitive modeling. *Cognitive Systems Research, 27*, 42-49. https://doi.org/10.1016/j.cogsys.2013.05.001
 - Hayes, B. K., Banner, S., Forrester, S. and Navarro, D. J. (2019). Selective sampling and inductive inference: Drawing inferences based on observed and missing evidence. *Cognitive Psychology, 113*. https://doi.org/10.1016/j.cogpsych.2019.05.003
 - Navarro, D. J., Dry, M. J. and Lee, M D. (2012). Sampling assumptions in inductive generalization. *Cognitive Science, 36*, 187-223. https://dx.doi.org/10.1111/j.1551-6709.2011.01212.x
 - Navarro, D. J. and Perfors, A. (2011). Hypothesis generation, the positive test strategy, and sparse categories. *Psychological Review, 118*, 120-34 https://dx.doi.org/10.1037/a0021110
