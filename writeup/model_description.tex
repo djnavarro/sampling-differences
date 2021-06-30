@@ -184,11 +184,11 @@ By way of comparison, \(\tau\) and \(\rho\) are the parameters defining the kern
 \subsection{The likelihood function}\label{the-likelihood-function}}
 
 \noindent
-We consider three different sampling assumptions the learner might make. Suppose the learner has observed a stimulus \(x\) that is property-positive (i.e., possesses the property).
+The Gaussian process prior supplies a mechanism for a Bayesian reasoner to impose two qualitatively-reasonable biases: smoothness and sparsity. What it does not provide is a learning method: how should the learner revise their prior beliefs when they observe stimuli and their properties? That role is played by the likelihood function, which describes the learners beliefs about how these observations were sampled. When constructing a likelhood, we first consider the \enquote{strong versus weak sampling} distinction introduced by Tenenbaum and Griffiths (2001). According to strong sampling, the observations are selected (somewhat randomly) \emph{only} from a subset of possibilities that satisfies some criterion. Consider, then, a participant who has observed stimulus \(x\) that is property-positve, and who understands the statistical implications of the sampling frame manipulation used in the experiment, and adopts a likelihood function that derived from a consideration of this sampling process:
 
 \begin{itemize}
 \item
-  Under \emph{property sampling} the learner assumes that this item was chosen uniformly at random from the set of property-positive stimuli. If \(\phi_i\) denotes the probability (or proportion) of \(x_i\) items (e.g., rocks of this specific size) that are plaxium positive, and (for simplicity) assume that the base rates of all stimulus types are the same, then the probability that a random plaxium-positive stimulus will turn out to have value \(x_i\) is
+  Under \textbf{property sampling} the learner assumes that this item was chosen uniformly at random from the set of property-positive stimuli. If \(\phi_i\) denotes the probability (or proportion) of \(x_i\) items (e.g., rocks of this specific size) that are plaxium positive, and (for simplicity) assume that the base rates of all stimulus types are the same, then the probability that a random plaxium-positive stimulus will turn out to have value \(x_i\) is
   \[
   P(x_i | \bm{\phi}) = \frac{\phi_i}{\sum_j \phi_j}
   \]
@@ -198,44 +198,54 @@ We consider three different sampling assumptions the learner might make. Suppose
   \[
   P(x_i | \bm{\phi}) = \frac{\phi_i}{|c|}
   \]
+\end{itemize}
+
+\noindent  
+This participant will apply a different likelihood function depending on the sampling condition. In contrast, a participant who does not consider the specifics of the sampling condition might (act as if they) believe that there is no pattern at all to how the stimuli are selected:
+
+\begin{itemize}
 \item
   Under \textbf{weak sampling}, items are sampled uniformly at random from all stimuli included in the experiment. In other words, it's identical to category sampling except that the \enquote{category} is larger. If \(|x|\) denotes the total number of items (in this case 6)
 
   \[
   P(x_i | \bm{\phi}) = \frac{\phi_i}{|x|}
   \]
-  Because they differ only by a constant that disappears later during the normalisation weak sampling and category sampling are indistinguishable for this design.
+  An important point to note is that, because they differ only by a constant that disappears later during the normalisation phase of Bayesian belief updating (i.e., applying the denominator term in Bayes' rule), weak sampling and category sampling are in fact indistinguishable for this design.
 \end{itemize}
 
 \noindent
-Elsewhere in the literature, it has been argued that weak sampling is essentially the model one assumes when one has no theory of the task. Navarro et al (2012) formalised this idea slightly by arguing that people might adopt a \enquote{mixed} sampling model where items are strongly sampled (be that property or category) with probability \(\theta\), and weakly sampled with probability \(1-\theta\). The version of the model we implement includes this \(\theta\) parameter: however, because weak and category sampling are identical in this design, the only effect that \(\theta\) has is to change model behaviour in the property sampling condition. Setting \(\theta = 0\) produces a null effect of sampling frame (i.e., model predicts no difference between category and property sampling, and that both conditions should look like weak/category sampling), whereas \(\theta = 1\) produces the largest possible effect.
+In practice it is unlikely that people divide neatly into two groups. Rather, we expect there to be a continuum that describes the extent to which people are sensitive to a sampling manipulation. Navarro et al (2012) formalised this idea slightly by arguing that people might adopt a \enquote{mixed} sampling model where items are strongly sampled (be that property or category) with probability \(\theta\), and weakly sampled with probability \(1-\theta\). The version of the model we implement includes this \(\theta\) parameter: however, because weak and category sampling are identical in this design, the only effect that \(\theta\) has is to change model behaviour in the property sampling condition. Setting \(\theta = 0\) produces a null effect of sampling frame (i.e., model predicts no difference between category and property sampling, and that both conditions should look like weak/category sampling), whereas \(\theta = 1\) produces the largest possible effect.
 
 \hypertarget{computing-generalisation-gradients}{%
 \subsection{Computing generalisation gradients}\label{computing-generalisation-gradients}}
 
 \noindent
-Suppose the learner has seen items \(\bm x\) that are property-positive. Bayesian reasoning yields:
+Suppose the learner has seen a set of stimulus items \(\bm x\) that are property-positive. To complete the model specification, we describe how the generalisation function emerges from the Bayesian model implied by a given prior \(P(\bm{\phi}_h)\) over possible functions, and a likelihood \(P(\bm x | \bm{\phi}_h)\) that describes the probability of the learner observing \(\bm x\) if \(\bm{\phi}_h\) is the true function. Applying Bayes' rule gives the posterior distribution
 
 \[ 
 P({\bm \phi}_h | \bm x) = \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\int P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h) \ dh^\prime}
 \]
 
 \noindent
-As noted below, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by a finite set so
+The underlying hypothesis space over possible functions \(\bm \phi \in \mathcal H\) is continuous so the denominator isegrates over all possible functions. In our implementation, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by considering only a finite set of possibilities, so the inference is written:
 
 \[ 
 P({\bm \phi}_h | \bm x) \approx \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\sum_{h^\prime} P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}
 \]
-The generalisation probability is obtained by computing the expected probability that a stimulus located at \(y_i\) is plaxium positive:
+
+\noindent
+This application of Bayes rule provides a posterior distribution over possible hypotheses as to the identity of the generalisation function, where the learner remains uncertain as to which function applies. Viewing this as a prediction problem, a natural way for the learner to estimate the generalisation probability \(g(y_i | \bm{x})\) (i.e., the probability that new item \(y_i\) possesses the property given that the items \(\bm x\) possess the property) is to compute the posterior expected value of \(\phi_i\). For a discrete hypothesis space:
 
 \[
 g(y_i | \bm{x}) = \sum_{h^\prime} \phi_{ih} P({\bm \phi}_h | \bm x)
 \]
+This completes the formal statement of the model.
 
 \hypertarget{implementation-details}{%
 \subsection{Implementation details}\label{implementation-details}}
 
-The model is implemented in R (R Core Team 2020) and uses some functions supplied through tidyverse (Wickham et al 2019). Precise information about the R environment in which computation was performed is available at \url{https://github.com/djnavarro/sampling-differences}, generated using the renv package to (Ushey 2021) to aid future reproducibility. In all modelling exercises, the finite approximate hypothesis space consisted of \(5^6 = 15625\) functions whose values are specified at the six stimulus values corresponding to the stimuli used in the experiment, using five possible probability values \(\phi_i \in \{.1, .3, .5, .7, .9\}\) for all items. Additional documentation for the source code and analyses can be found at the \enquote{sampling-differences} GitHub repository.
+\noindent
+For the purposes of the current paper, the model was implemented in R (R Core Team 2020) with some reliance on tidyverse functions (Wickham et al 2019). All details and documentation about the model and the R environment used to run analyses are available at the following repository: \url{https://github.com/djnavarro/sampling-differences}. Details regarding the environment weregenerated using the renv package (Ushey 2021) to aid future reproducibility. In all modelling exercises, the finite approximate hypothesis space consisted of \(5^6 = 15625\) functions whose values are specified at the six stimulus values corresponding to the stimuli used in the experiment, using five possible probability values \(\phi_i \in \{.1, .3, .5, .7, .9\}\) for all items.
 
 \hypertarget{references}{%
 \subsection{References}\label{references}}
@@ -261,6 +271,8 @@ The model is implemented in R (R Core Team 2020) and uses some functions supplie
   Rasmussen, C. E., and Williams, C. K. I. (2006). \emph{Gaussian Processes for Machine Learning}
 \item
   Shepard, R. N. (1987). Toward a universal law of generalization for psychological science. \emph{Science, 237}(4820), 1317-1323
+\item
+  Tenenbaum, J. B., and Griffiths, T. L. (2001). Generalization, similarity, and Bayesian inference. \emph{Behavioral and Brain Sciences, 24}(4), 629-64
 \item
   Ushey, K. (2021). \emph{renv: Project Environments}. R package version 0.13.2.
   \url{https://CRAN.R-project.org/package=renv}
