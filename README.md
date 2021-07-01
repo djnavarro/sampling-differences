@@ -15,8 +15,9 @@ This repository contains material associated with:
 
 The structure of this repository is based on Danielle Navarro’s
 [cogsci-template](https://github.com/djnavarro/cogsci-template) and
-roughly mirrors the conventions documented there. It contains the
-following folders, each with their own README.md file:
+roughly mirrors the conventions documented there. The substantive
+content consists of the following folders, each with their own README.md
+file:
 
   - [inputs](./inputs) contains the files I was provided with, unedited
   - [preprocessing](./preprocessing) contains an R script that reads
@@ -31,6 +32,19 @@ following folders, each with their own README.md file:
   - [writeup](./writeup) does not contain the complete manuscript, only
     the technical appendix that describes the formal specification of
     the model
+  - the [scratchpad.md](./scratchpad.md) file is essentially a manual
+    log file, used for me to keep track of the process and take note of
+    abandoned “forks” in the analysis process
+
+The other files included in the repository are:
+
+  - files allowing the R environment to be specified reproducibly using
+    the  
+    [renv package](https://rstudio.github.io/renv/): the [renv](./renv)
+    folder and `renv.lock` file are the main ones, though note that renv
+    also modifies the `.Rbuildignore` and `.Rprofile` files
+  - project / repository management files: `sampling-differences.Rproj`
+    and `.gitignore`.
 
 The repository is not complete. Some things on the to-do list:
 
