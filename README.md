@@ -46,7 +46,7 @@ The other files included in the repository are:
     and [.Rprofile](./.Rprofile) files, so those are also included
   - the rstudio project file
     [sampling-differences.Rproj](./sampling-differences.Rproj) and usual
-    [.gitignore](./gitignore) file(s) to keep the repo tidy
+    [.gitignore](./.gitignore) file(s) to keep the repo tidy
 
 The repository is not complete. Some things on the to-do list:
 
