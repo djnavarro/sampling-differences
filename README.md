@@ -35,6 +35,8 @@ file:
   - the [scratchpad.md](./scratchpad.md) file is essentially a manual
     log file, used for me to keep track of the process and take note of
     abandoned “forks” in the analysis process
+  - the [docs](./docs) folder is used as a means to publish select
+    output files
 
 The other files included in the repository are:
 
