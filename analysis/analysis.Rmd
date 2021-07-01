@@ -468,7 +468,7 @@ subgroup_aggregate %>%
   empirical_plot()
 ```
 
-This pattern is (unsurprisingly, since this was the basis of the selection) more or less exactly what the model predictions. When we look at the aggregated data for everyone else, we see data in which the effect of sample size is almost entirely non-existent. The responses increase with sample size for the near items (test items 1 and 2), but do not appear to be very different in the category sampling versus property sampling conditions. For the distant items, there are essentially no effects at all (or miniscule ones):
+This pattern is (unsurprisingly, since this was the basis of the selection) more or less exactly what the model predicts. When we look at the aggregated data for everyone else, we see data in which the effect of sample size is almost entirely non-existent. The responses increase with sample size for the near items (test items 1 and 2), but do not appear to be very different in the category sampling versus property sampling conditions. For the distant items, there are essentially no effects at all (or miniscule ones):
 
 
 ```{r}
@@ -487,8 +487,7 @@ subgroup_aggregate %>%
 - Although crude, this classification system does seem somewhat warranted by the data. This is of some value for experiment 2, since we can compare participants on working memory capacity etc based on this categorisation. Here are the participants and the classifications I constructed:
 
 ```{r}
-exp2_classification <- subgroup_individual %>% 
-  dplyr::filter(exp == "exp2") %>% 
+subgroup_classification <- subgroup_individual %>% 
   dplyr::group_by(id) %>% 
   dplyr::summarise(
     age = dplyr::first(age),
@@ -501,14 +500,14 @@ exp2_classification <- subgroup_individual %>%
   dplyr::arrange(id) 
 
 readr::write_csv(
-  exp2_classification,
-  here::here("analysis", "exp2_classification.csv")
+  subgroup_classification,
+  here::here("analysis", "subgroup_classification.csv")
 )
 
-print(exp2_classification, n = 100)
+subgroup_classification
 ```
 
-Note that this table is also saved in the "analysis" folder of the repository, as "exp2_classification.csv"
+The complete table for both experiments is saved in the "analysis" folder of the repository, as "subgroup_classification.csv"
 
 ## Session info
 
