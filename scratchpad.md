@@ -1,6 +1,12 @@
 
 ## 1 July 2021
 
+- I've now added a new analysis of the empirical data that replaces the original one
+  (with the "tadpole plots" etc). The findings aren't substantially different, but
+  it's a little simpler than the original
+
+## 1 July 2021
+
 - After an initial exploration of the data, I'm not convinced that the framework
   used by Navarro et al (2012) is implemented correctly here. My original thinking was 
   that we could imagine theta playing a similar role in the GP model as it has
