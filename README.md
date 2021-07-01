@@ -53,5 +53,6 @@ The repository is not complete. Some things on the to-do list:
   - other resources (e.g., OSF folders, Overleaf documents, Google docs)
     that are linked to the project, should be linked from this readme
   - data files do not have a proper data dictionary yet
+  - readme files in the various subfolders need to be written properly
   - writeup files and the html output from the analysis folder should
     probably be made easily accessible via GitHub Pages
