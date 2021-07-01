@@ -1,6 +1,5 @@
 
 sampling_frames_model <- function(
-  theta = 1,   # sampling assumption lies between 0 (weak) and 1 (strong)
   tau = 3,     # gaussian process prior: baseline smoothness constraint
   rho = 1,     # gaussian process prior: decay rate for smoothness constraint
   sigma = .5,  # gaussian process prior: inherent noise level in the data
@@ -131,7 +130,9 @@ sampling_frames_model <- function(
   # weak sampling assumes the items are sampled uniformly at random from
   # all items, and the fact that the observed item turned out to be property
   # positive is coincidental. in this experimental design there is not much
-  # of a difference between weak sampling and category sampling
+  # of a difference between weak sampling and category sampling... NOTE:
+  # the weak_sampling() function does not get called anymore, because I have
+  # fixed theta = 1. See comments below.
   weak_sampling <- function(stimulus) {
     numerator <- eval(
       expr = substitute(stimulus),
@@ -176,7 +177,13 @@ sampling_frames_model <- function(
     # category sampling are indistinguishable in this design, the role of
     # the theta parameter is to shift the generalisation gradients in the
     # property sampling condition only (in the direction of the category/weak
-    # sampling gradients)
+    # sampling gradients)...
+    #
+    # ...but, one thing that emerged from the exploratory analysis is that
+    # the Navarro et al (2012) formalism isn't buying us much here, so I have
+    # fixed the value of theta to be 1 rather than treat it as a free parameter.
+    # this choice (and its implications) are noted in the scratchpad log.
+    theta <- 1
     prob1 <- theta * strong_prob1 + (1 - theta) * weak_prob1
     prob2 <- theta * strong_prob2 + (1 - theta) * weak_prob2
 

@@ -184,37 +184,19 @@ By way of comparison, \(\tau\) and \(\rho\) are the parameters defining the kern
 \subsection{The likelihood function}\label{the-likelihood-function}}
 
 \noindent
-The Gaussian process prior supplies a mechanism for a Bayesian reasoner to impose two qualitatively-reasonable biases: smoothness and sparsity. What it does not provide is a learning method: how should the learner revise their prior beliefs when they observe stimuli and their properties? That role is played by the likelihood function, which describes the learners beliefs about how these observations were sampled. When constructing a likelhood, we first consider the \enquote{strong versus weak sampling} distinction introduced by Tenenbaum and Griffiths (2001). According to strong sampling, the observations are selected (somewhat randomly) \emph{only} from a subset of possibilities that satisfies some criterion. Consider, then, a participant who has observed stimulus \(x\) that is property-positve, and who understands the statistical implications of the sampling frame manipulation used in the experiment, and adopts a likelihood function that derived from a consideration of this sampling process:
+The Gaussian process prior supplies a mechanism for a Bayesian reasoner to impose two qualitatively-reasonable biases: smoothness and sparsity. What it does not provide is a learning method: how should the learner revise their prior beliefs when they observe stimuli and their properties? That role is played by the likelihood function, which describes the learners beliefs about how these observations were sampled. Consider a participant who has observed stimulus \(x\) that is property-positive, and who understands the statistical implications of the sampling frame manipulation used in the experiment, and adopts a likelihood function that derived from a consideration of this sampling process:
 
-\begin{itemize}
-\item
-  Under \textbf{property sampling} the learner assumes that this item was chosen uniformly at random from the set of property-positive stimuli. If \(\phi_i\) denotes the probability (or proportion) of \(x_i\) items (e.g., rocks of this specific size) that are plaxium positive, and (for simplicity) assume that the base rates of all stimulus types are the same, then the probability that a random plaxium-positive stimulus will turn out to have value \(x_i\) is
-  \[
-  P(x_i | \bm{\phi}) = \frac{\phi_i}{\sum_j \phi_j}
-  \]
-  where the sum in the denominator is taken across all possible stimuli (for these designs that's just the six test items).
-\item
-  Under \textbf{category sampling} the items are sampled uniformly at random from items that belong to the category (in this case, the category consists of 2 of the 6 test items only). If there are \(|c|\) items in the category that have the same base rates, then the probability of the stimulus value \(x_i\) is \(1/|c|\). The probability that the item is also property positive depends on the value of \(\phi_i\) and so
-  \[
-  P(x_i | \bm{\phi}) = \frac{\phi_i}{|c|}
-  \]
-\end{itemize}
+Under \textbf{property sampling} the learner assumes that this item was chosen uniformly at random from the set of property-positive stimuli. If \(\phi_i\) denotes the probability (or proportion) of \(x_i\) items (e.g., rocks of this specific size) that are plaxium positive, and (for simplicity) assume that the base rates of all stimulus types are the same, then the probability that a random plaxium-positive stimulus will turn out to have value \(x_i\) is
+\[
+P(x_i | \bm{\phi}) = \frac{\phi_i}{\sum_j \phi_j}
+\]
+where the sum in the denominator is taken across all possible stimuli (for these designs that's just the six test items).
 
-\noindent  
-This participant will apply a different likelihood function depending on the sampling condition. In contrast, a participant who does not consider the specifics of the sampling condition might (act as if they) believe that there is no pattern at all to how the stimuli are selected:
-
-\begin{itemize}
-\item
-  Under \textbf{weak sampling}, items are sampled uniformly at random from all stimuli included in the experiment. In other words, it's identical to category sampling except that the \enquote{category} is larger. If \(|x|\) denotes the total number of items (in this case 6)
-
-  \[
-  P(x_i | \bm{\phi}) = \frac{\phi_i}{|x|}
-  \]
-  An important point to note is that, because they differ only by a constant that disappears later during the normalisation phase of Bayesian belief updating (i.e., applying the denominator term in Bayes' rule), weak sampling and category sampling are in fact indistinguishable for this design.
-\end{itemize}
-
-\noindent
-In practice it is unlikely that people divide neatly into two groups. Rather, we expect there to be a continuum that describes the extent to which people are sensitive to a sampling manipulation. Navarro et al (2012) formalised this idea slightly by arguing that people might adopt a \enquote{mixed} sampling model where items are strongly sampled (be that property or category) with probability \(\theta\), and weakly sampled with probability \(1-\theta\). The version of the model we implement includes this \(\theta\) parameter: however, because weak and category sampling are identical in this design, the only effect that \(\theta\) has is to change model behaviour in the property sampling condition. Setting \(\theta = 0\) produces a null effect of sampling frame (i.e., model predicts no difference between category and property sampling, and that both conditions should look like weak/category sampling), whereas \(\theta = 1\) produces the largest possible effect.
+Under \textbf{category sampling} the items are sampled uniformly at random from items that belong to the category (in this case, the category consists of 2 of the 6 test items only). If there are \(|c|\) items in the category that have the same base rates, then the probability of the stimulus value \(x_i\) is \(1/|c|\). The probability that the item is also property positive depends on the value of \(\phi_i\) and so
+\[
+P(x_i | \bm{\phi}) = \frac{\phi_i}{|c|}
+\]
+Accordingly, the model implies that participants will apply a different likelihood function depending on the sampling condition, though it should be noted that this is a model \emph{only} of participants who are sensitive to the sampling manipulation. It is useful for the purposes of identifying what specific pattern we should expect from someone who is sensitive to this manipulation (rather than making a generic suggestion that \enquote{people do something different in the two conditions}), allowing us to look for the theoretically relevant pattern of behaviour rather than test arbitrary terms in a linear model.
 
 \hypertarget{computing-generalisation-gradients}{%
 \subsection{Computing generalisation gradients}\label{computing-generalisation-gradients}}
@@ -227,7 +209,7 @@ P({\bm \phi}_h | \bm x) = \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\int P(\b
 \]
 
 \noindent
-The underlying hypothesis space over possible functions \(\bm \phi \in \mathcal H\) is continuous so the denominator isegrates over all possible functions. In our implementation, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by considering only a finite set of possibilities, so the inference is written:
+The underlying hypothesis space over possible functions \(\bm \phi \in \mathcal H\) is continuous so the denominator integrates over all possible functions. In our implementation, we approximate the full hypothesis space \(\mathcal{H}\) of possible functions by considering only a finite set of possibilities, so the inference is written:
 
 \[ 
 P({\bm \phi}_h | \bm x) \approx \frac{P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}{\sum_{h^\prime} P(\bm x | \bm{\phi}_h) P(\bm{\phi}_h)}
