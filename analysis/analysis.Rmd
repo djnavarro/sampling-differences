@@ -93,7 +93,7 @@ ggplot2::ggplot(
   )
 ```
 
-This visualisation oversimplifies a little as it doesn't consider systematic individual differences and reports only aggregated data, but it is sufficient for the moment. As a point of comparison, here is an example of the kind of behaviour one might expect from the model:
+This visualisation oversimplifies a little as it doesn't consider systematic individual differences and reports only aggregated data, but it is helpful for illustrating what the overall pattern looks like. As a point of comparison, here is an example of the kind of behaviour one might expect from the model. In this example we use the same parameter values reported by Hayes et al (2019), though not for any principled reason because their designs were somewhat different to ours. However, those parameter settings ($\tau = 1.5$, $\rho = .1$, $\sigma = .5$ and $\mu = .5$) make a convenient starting point, and as demonstrated by the simulations reported by Hayes et al, the key qualitative predictions of the model are almost invariant across the parameter space: 
 
 ```{r model-visualisation, fig.height=3}
 model_plot <- function(model) {
@@ -144,19 +144,27 @@ model_plot <- function(model) {
     )
 }
 
-sampling_frames_model(tau = 2, rho = .5, sigma = 1, mu = .05) %>% 
+sampling_frames_model(tau = 1.5, rho = .1, sigma = .5, mu = .5) %>% 
   model_plot()
 ```
 
-The qualitative pattern of results produced by the model is very similar to that produced by human participants. We define this qualitative pattern in the following way. First, for simplicity we group test items 1 and 2 together as the "near" items in the sense that they have the same stimulus values as the items shown to people during training. Similarly, we can group test items 3-6 as the "distant" items as they all fall outside the range of stimulus values shown during training. As a general rule, responses to near items are higher than responses to distant items, but this effect is not especially interesting: it merely reflects the fact that generalisation decreases as a function of dissimilarity, which is of course to be expected and is one of the oldest and most robust effects in the literature. The figures above illustrate that this effect exists in our data and in the model predictions, but it is of course a weak test.
+What matters for the moment is that the model behaviour is (qualitatively speaking) quite similar to the aggregate pattern of results produced by human participants, replicating the findings of Hayes et al (2019). Some aspects to this pattern are not theoretically interesting, however. For example, in both the property and category sampling conditions there is a tendency for generalisation responses to diminish as a function of distance (left to right in the plots). This pattern is of course captured by the model, but this is not diagnostic of anything: the relationship between similarity and generalisation is one of the oldest and most consistent effects in the literature. The fact that our data and model both reproduce it is a small sanity check that our data are not garbage, but it is otherwise of no interest to us. 
 
-The effect of theoretical interest is the following "three way" interaction:
+In terms of the qualitative patterns that *are* relevant to the sampling manipulation, an examination of the model behaviour suggests we shold be looking for the following pattern (which would, I suppose, be termed a "three way interaction" if I were bothering with pointless default linear models that have no theoretical meaning here). If an individual participant is sensitive to sampling manipulation we should expect to produce something like this in their behaviour:
 
-- In category sampling, increasing sample size increases the response to all items (near and distant)
+- In category sampling, increasing sample size increases the response to near items
+- In category sampling, increasing sample size increases the response to distant items
 - In property sampling, increasing sample size increases the response to near items
 - In property sampling, increasing sample size *decreases* the response to distant items
 
-The model prediction is that if people are sensitive to the sampling manipulation, they will show that interaction pattern. 
+In the actual data we might expect the data from single subjects to be relatively noisy, of course, given that we do not have large numbers of observations from each person. We can also note that we wouldn't necessarily expect the four individual components to occur with equal frequency. The model makes clear predictions about the *direction*, but it does not entail a strong claim about magnitude. For example, here is what the model behaviour looks like when we set $\tau = 3$, $\rho = 1$, $\sigma = .1$ and $\mu = .05$
+
+```{r, fig.height=3}
+sampling_frames_model(tau = 3, rho = 1, sigma = .1, mu = .05) %>% 
+  model_plot()
+```
+
+At these parameters the effect for "category sampling, distant items" has attenuated to almost nothing (whereas it was quite large at the original parameter settings), and the effect for "property sampling, near items" is now quite large (though it was almost non existent at the original settings). Per the simulations reported by Hayes et al (2019), the *ordinal/directional* effects predicted by the model appear to be very robust across parameter settings, but as this illustrates the *magnitudes* are not stable across parameter values. Accordingly, when looking for "model consistent" patterns at the individual subject level we will focus primarily on the ordinal information. 
 
 ## Individual subject level
 
