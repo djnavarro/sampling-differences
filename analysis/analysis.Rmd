@@ -157,6 +157,8 @@ In terms of the qualitative patterns that *are* relevant to the sampling manipul
 - In property sampling, increasing sample size increases the response to near items
 - In property sampling, increasing sample size *decreases* the response to distant items
 
+When writing this, we define "near items" to be those stimuli that were included as part of the training phase (i.e., test items 1 and 2), and "distant items" to be those stimuli that fall outside the range spanned by the near items (i.e., test items 3, 4, 5 and 6).
+
 In the actual data we might expect the data from single subjects to be relatively noisy, of course, given that we do not have large numbers of observations from each person. We can also note that we wouldn't necessarily expect the four individual components to occur with equal frequency. The model makes clear predictions about the *direction*, but it does not entail a strong claim about magnitude. For example, here is what the model behaviour looks like when we set $\tau = 3$, $\rho = 1$, $\sigma = .1$ and $\mu = .05$
 
 ```{r, fig.height=3}
@@ -165,6 +167,13 @@ sampling_frames_model(tau = 3, rho = 1, sigma = .1, mu = .05) %>%
 ```
 
 At these parameters the effect for "category sampling, distant items" has attenuated to almost nothing (whereas it was quite large at the original parameter settings), and the effect for "property sampling, near items" is now quite large (though it was almost non existent at the original settings). Per the simulations reported by Hayes et al (2019), the *ordinal/directional* effects predicted by the model appear to be very robust across parameter settings, but as this illustrates the *magnitudes* are not stable across parameter values. Accordingly, when looking for "model consistent" patterns at the individual subject level we will focus primarily on the ordinal information. 
+
+Before proceeding to consider individual subject level patterns, it is also worth considering what it would mean for a participant to be insensitive to the sampling manipulation when described in ordinal terms. This is not merely the "opposite" of the pattern listed above. In this respect, the Hayes et al (2019) model does not offer strong guidance because it is not really designed to model insensitivity. However, we can at the very least note the following as reasonable claims. If "insensitivity" holds:
+
+- Increasing the sample size should have the same directional effect on responses to near items in the category condition and the distant items
+- Increasing the sample size should have the same directional effect on responses to distant items in the category condition and the distant items
+
+It does not necessarily mean that responses to near items and distant items should behave the same way.
 
 ## Individual subject level
 
