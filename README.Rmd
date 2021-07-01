@@ -41,10 +41,11 @@ The other files included in the repository are:
 
 - files allowing the R environment to be specified reproducibly using the   
   [renv package](https://rstudio.github.io/renv/): the [renv](./renv) folder 
-  and `renv.lock` file are the main ones, though note that renv also modifies
-  the `.Rbuildignore` and `.Rprofile` files
-- project / repository management files: `sampling-differences.Rproj` and 
-  `.gitignore`. 
+  and [renv.lock](./renv.lock) file are the main ones, though note that renv 
+  also modifies the [.Rbuildignore](./.Rbuildignore) and 
+  [.Rprofile](./.Rprofile) files, so those are also included
+- the rstudio project file [sampling-differences.Rproj](./sampling-differences.Rproj) 
+  and usual [.gitignore](./gitignore) file(s) to keep the repo tidy
 
 The repository is not complete. Some things on the to-do list:
   
@@ -52,6 +53,6 @@ The repository is not complete. Some things on the to-do list:
 that are linked to the project, should be linked from this readme
 - data files do not have a proper data dictionary yet
 - writeup files and the html output from the analysis folder should probably
-  be made easily accessible via GH Pages 
+  be made easily accessible via GitHub Pages 
   
   
