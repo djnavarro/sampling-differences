@@ -11,6 +11,7 @@ output:
 knitr::opts_chunk$set(echo = FALSE)
 source(here::here("models", "sampling_frames_model.R"))
 `%>%` <- magrittr::`%>%`
+set.seed(1234)
 ```
 
 ## Aggregate level
