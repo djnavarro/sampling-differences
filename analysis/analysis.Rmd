@@ -18,10 +18,11 @@ source(here::here("models", "sampling_frames_model.R"))
 To begin, let's import the data and examine it at an aggregate level. Here's the data:
 
 ```{r import-data, message=FALSE}
+ci_quantile <- function(x, quantile) {
+  mean(x) + qt(quantile, length(x) - 1) * sd(x) / sqrt(length(x) - 1)
+}
+
 import_data <- function(experiment) {
-  ci_quantile <- function(x, quantile) {
-    mean(x) + qt(quantile, length(x) - 1) * sd(x) / sqrt(length(x) - 1)
-  }
   here::here("data", paste0(experiment, ".csv")) %>% 
     readr::read_csv() %>% 
     dplyr::group_by(sample_size, sampling_frame, test_item) %>% 
@@ -41,56 +42,61 @@ human_aggregate
 Here is a simple visualisation that plots the mean and 95% confidence interval for the average response in every condition in and both experiments. (The confidence intervals here are Student intervals calculated independently for each condition)
 
 ```{r data-visualisation}
-ggplot2::ggplot(
-  data = human_aggregate %>% dplyr::mutate(
-    exp = exp %>% stringr::str_replace_all("exp", "Experiment "),
-    sampling_frame = sampling_frame %>% stringr::str_to_sentence()
-  ), 
-  mapping = ggplot2::aes(
-    x = test_item, 
-    y = response,
-    colour = factor(sample_size),
-    group = sample_size
-  )
-) +
-  ggplot2::facet_grid(
-    rows = ggplot2::vars(exp),
-    cols = ggplot2::vars(sampling_frame)
-  ) + 
-  ggplot2::geom_path(
-    show.legend = FALSE,
-    size = .25,
-    linetype = "dashed",
-    position = ggplot2::position_dodge2(
-      width = 0.5, 
-      padding = 0.5
-    )
-  ) + 
-  ggplot2::geom_pointrange(
+empirical_plot <- function(data_aggregate) { 
+  
+  ggplot2::ggplot(
+    data = data_aggregate %>% dplyr::mutate(
+      exp = exp %>% stringr::str_replace_all("exp", "Experiment "),
+      sampling_frame = sampling_frame %>% stringr::str_to_sentence()
+    ), 
     mapping = ggplot2::aes(
-      ymin = ci_lower,
-      ymax = ci_upper,
-    ),
-    position = ggplot2::position_dodge2(
-      width = 0.5, 
-      padding = 0.5
+      x = test_item, 
+      y = response,
+      colour = factor(sample_size),
+      group = sample_size
     )
   ) +
-  ggplot2::theme_bw() + 
-  ggplot2::coord_cartesian(ylim = c(0, 1)) + 
-  ggplot2::scale_x_continuous(
-    name = "Test stimulus",
-    breaks = 1:6, 
-    minor_breaks = NULL
-  ) + 
-  ggplot2::scale_y_continuous(
-    name = "Response",
-    minor_breaks = NULL
-  ) + 
-  ggplot2::scale_color_brewer(
-    name = "Sample size", 
-    palette = "Dark2"
-  )
+    ggplot2::facet_grid(
+      rows = ggplot2::vars(exp),
+      cols = ggplot2::vars(sampling_frame)
+    ) + 
+    ggplot2::geom_path(
+      show.legend = FALSE,
+      size = .25,
+      linetype = "dashed",
+      position = ggplot2::position_dodge2(
+        width = 0.5, 
+        padding = 0.5
+      )
+    ) + 
+    ggplot2::geom_pointrange(
+      mapping = ggplot2::aes(
+        ymin = ci_lower,
+        ymax = ci_upper,
+      ),
+      position = ggplot2::position_dodge2(
+        width = 0.5, 
+        padding = 0.5
+      )
+    ) +
+    ggplot2::theme_bw() + 
+    ggplot2::coord_cartesian(ylim = c(0, 1)) + 
+    ggplot2::scale_x_continuous(
+      name = "Test stimulus",
+      breaks = 1:6, 
+      minor_breaks = NULL
+    ) + 
+    ggplot2::scale_y_continuous(
+      name = "Response",
+      minor_breaks = NULL
+    ) + 
+    ggplot2::scale_color_brewer(
+      name = "Sample size", 
+      palette = "Dark2"
+    )
+}
+
+empirical_plot(human_aggregate)
 ```
 
 This visualisation oversimplifies a little as it doesn't consider systematic individual differences and reports only aggregated data, but it is helpful for illustrating what the overall pattern looks like. As a point of comparison, here is an example of the kind of behaviour one might expect from the model. In this example we use the same parameter values reported by Hayes et al (2019), though not for any principled reason because their designs were somewhat different to ours. However, those parameter settings ($\tau = 1.5$, $\rho = .1$, $\sigma = .5$ and $\mu = .5$) make a convenient starting point, and as demonstrated by the simulations reported by Hayes et al, the key qualitative predictions of the model are almost invariant across the parameter space: 
@@ -199,15 +205,41 @@ human_individual <- dplyr::bind_rows(
   import_data("exp1"), 
   import_data("exp2")
 )
+```
 
+In order to have a measure of the "effect" of increasing sample size for a given participant in a given condition, we need to abstract slightly from the raw data because each person provides multiple relevant observations. In the simplest case, for example, here are the relevant data for participant 1 in experiment 2, for the near items in the category sampling condition:
+
+```{r}
+human_individual %>% 
+  dplyr::filter(
+    id == "exp2_1", 
+    test_item %in% 1:2, 
+    sampling_frame == "category"
+  )
+```
+
+A simple way to extract an "effect of increasing sample size" measure is to run a linear regression of response against sample size and use the coefficient associated with sample size as the measure:
+```{r}
+human_individual %>% 
+  dplyr::filter(
+    id == "exp2_1", 
+    test_item %in% 1:2, 
+    sampling_frame == "category"
+  ) %>% 
+  lm(response ~ sample_size, .)
+```
+
+So for this participant the relevant coefficient is 0.06, suggesting that increasing the sample size by 1 tended to increase the generalisation response by 0.06 on average for this person. (There is, of course, no point in testing for significance here - the purpose of this linear model is to extract a point estimate only for the purposes of summarising the observations. Though I have relied on a statistical model, this is a descriptive statistic for all intents and purposes)
+
+
+```{r estimate-ss-effect}
 human_ss_effect <- human_individual %>% 
   dplyr::group_by(sampling_frame, stimulus, id, exp) %>% 
   dplyr::summarise(ss_effect = (lm(response ~ sample_size))$coef[2]) %>% 
   dplyr::ungroup()
 ```
 
-A simple way to examine the data at an individual subject level is to import it with no aggregation at all, then estimate the effect of "adding one training item" on the generalisation response by fitting a linear regression separately for each participant, stimulus (near or distant) and sampling type (category or property). This will of course produce a very noisy estimate for a single person. Our interest here is looking at the distribution of these coefficients in each condition:
-
+In the figure below, I've plotted the empirical distribution of these coefficients in each condition and each experiment. Each coloured dot shows the coefficient for a single participant, and the colour is used to indicate the sign: positive valued coefficients are coloured in blue, and negative valued coefficients are coloured in red. The grey violin plots shown behind them depict gaussian kernel density estimates of the distribution (truncated to the range of the data, using a bandwidth of .01 to ensure fairly smooth densities). Large black dots show the mean coefficient in each condition:
 
 ```{r visualise-data-2, fig.height=8}
 ggplot2::ggplot(
@@ -227,7 +259,7 @@ ggplot2::ggplot(
     rows = ggplot2::vars(exp),
     cols = ggplot2::vars(sampling_frame)
   ) +
-  ggplot2::geom_violin(fill = "grey80") +
+  ggplot2::geom_violin(fill = "grey80", bw = .01) +
   ggplot2::geom_hline(
     yintercept = 0, 
     colour = "black",
@@ -259,27 +291,74 @@ ggplot2::ggplot(
   ) 
 ```
 
+The tabulation below counts the number of participants whose responses shift upwards with sample size (`n_positive`) or downwards with sample size (`n_negative`). In every case, the majority of participants shift in the direction predicted by the GP model (i.e., negative for the distant items in property sampling, positive in every other case...)
 
-Here is a quick tabulation. For each of the four conditions (cd = category distant, etc...), did the participant increase (1) or decrease (0) their judgements as a function of sample size: 
+Personally, I hate running more statistical tests than I absolutely need to, but I know other people care about such things so I have also added a column showing the p-value if we ran a binomial test on these data, against the null hypothesis that the true probability of an upward shift is 0.5. Unsurprisingly, most of these differences are individually significant at the standard $\alpha = .05$ level. It's pretty clear that a majority of individual subjects are reproducing the ordinal patterns predicted by the Hayes et al model...
 
-```{r}
-patterns <- human_ss_effect %>% 
-  dplyr::mutate(upward = ss_effect > 0) %>% 
+```{r tabulate-directions, message=FALSE}
+binom_tests <- function(x1, x2) {
+  purrr::map2_dbl(x1, x2, function(x1, x2) {
+    binom.test(
+      x = x1,
+      n = x1 + x2,
+      p = 0.5
+    )$p.value
+  })
+}
+
+use_pretty_p <- function(p) {
+  (scales::pvalue_format())(p)
+}
+
+human_ss_effect %>% 
+  dplyr::group_by(exp, sampling_frame, stimulus) %>%
+  dplyr::summarise(
+    n_positive = sum(ss_effect > 0),
+    n_negative = sum(ss_effect < 0),
+    n_zero = sum(ss_effect == 0), 
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    p_value = binom_tests(n_positive, n_negative) %>% 
+      use_pretty_p()
+  )
+```
+
+The preceding analysis is fine as far as it goes, but it has a substantial limitation: it examines each condition separately. The Hayes et al model makes a much more specific prediction about individual subjects. For each person we have ordinal results for four conditions -- category-near (cn), category-distant (cd), property-near (pn) and property-distant (pd) -- and if the model was capturing something sensible at an individual subject level we should see a disproportionate number of people meeting the ordinal prediction for all four conditions. Let `+` denote a positive directional shift, `-` denote a negative directional shift and `.` denote no change. If we disregard the `.` cases on the grounds that they are difficult to interpret, the pattern we're expecting to see from people who are sensitive to the frame manipulation is `cn+ cd+ pn+ pd-` (or to use a more compact notion: `+++-`). For people who are insensitive to sampling we expect to see one of the following four patterns: `++++`, `+-+-`, `-+-+` or `----` (i.e., those in which the effect is in the same direction for category and property sampling conditions). The remaining 11 patterns of the $2^4 = 16$ possibilities should be less common. 
+
+Here is a tabulation showing the frequency of the observed patterns:
+
+```{r detect-patterns}
+compact_sign <- function(x) {
+  x %>% 
+    stringr::str_replace_all("-1", "-") %>% 
+    stringr::str_replace_all("1", "+") %>% 
+    stringr::str_replace_all("0", ".")
+}
+
+patterns_individual <- human_ss_effect %>% 
+  dplyr::mutate(upward = sign(ss_effect)) %>% 
   tidyr::unite("case", sampling_frame, stimulus) %>% 
   tidyr::pivot_wider(id_cols = c(id, exp), names_from = case, values_from = upward) %>% 
-  dplyr::select(-id) %>% 
   dplyr::mutate(
-    cd_cn_pd_pn = paste(
-      as.numeric(category_distant), 
-      as.numeric(category_near), 
-      as.numeric(property_distant), 
-      as.numeric(property_near), 
-      sep = "_"
+    cn_cd_pn_pd = paste(
+      compact_sign(category_near),
+      compact_sign(category_distant),
+      compact_sign(property_near),
+      compact_sign(property_distant),
+      sep = ""
     )
   ) %>% 
-  dplyr::select(exp, cd_cn_pd_pn) %>% 
+  dplyr::select(exp, cn_cd_pn_pd, id) 
+
+patterns <- patterns_individual%>% 
+  dplyr::select(exp, cn_cd_pn_pd) %>% 
+  dplyr::filter(
+    cn_cd_pn_pd %>% 
+      stringr::str_detect(stringr::fixed("."), negate = TRUE)
+  ) %>% 
   dplyr::group_by(exp) %>% 
-  dplyr::count(cd_cn_pd_pn)
+  dplyr::count(cn_cd_pn_pd)
 
 patterns %>% 
   dplyr::filter(exp == "exp1") %>%   
@@ -290,23 +369,149 @@ patterns %>%
   dplyr::arrange(-n)
 ```
 
-In this output, the "canonical" pattern predicted by the sampling frame model is 1_1_0_1, namely that the effect is positive in every condition except the property-distant. Happily for us this is the most common pattern in each case. 
+In both cases, the most common pattern is the one the model predicts for a participant who is sensitive to sampling frame in the theoretically-predicted way (i.e., `+++-`) and the four patterns that suggest "pure" insensitivity (i.e., `++++`, `+-+-`, `-+-+` or `----`) seem to be more common than you would expect under a simple null hypothesis in which all 16 patterns were equally likely. The tabulation below summarises this:
 
-What about if there were no effect of the frame manipulation? That's not quite so clear. The model suggests that we should expect that 1_1_1_1 would be the typical pattern, but that is based on the idea that "weak" sampling will push everything upwards in this task. But at a minimum we would expect conditions of the form "a_b_a_b" (i.e., always the same direction for property and category) where a and b may or may not be different
+```{r classify-patterns, message=FALSE}
+pattern_classes <- patterns %>% 
+  dplyr::mutate(pattern_type = dplyr::case_when(
+    cn_cd_pn_pd == "+++-" ~ "sensitive",
+    cn_cd_pn_pd %in% c("++++", "+-+-", "-+-+", "----") ~ "insensitive",
+    TRUE ~ "other"
+  )) %>% 
+  dplyr::group_by(exp, pattern_type) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(H0_base_rate = dplyr::case_when(
+    pattern_type == "sensitive" ~ 1/16,
+    pattern_type == "insensitive" ~ 4/16,
+    pattern_type == "other" ~ 11/16,
+    TRUE ~ NA_real_
+  ))
+
+pattern_classes
+```
+
+```{r}
+# convenience for inline code below
+sensitive_1   <- pattern_classes %>% dplyr::filter(pattern_type == "sensitive",   exp == "exp1") %>% dplyr::pull(n)
+insensitive_1 <- pattern_classes %>% dplyr::filter(pattern_type == "insensitive", exp == "exp1") %>% dplyr::pull(n)
+other_1       <- pattern_classes %>% dplyr::filter(pattern_type == "other",       exp == "exp1") %>% dplyr::pull(n)
+
+sensitive_2   <- pattern_classes %>% dplyr::filter(pattern_type == "sensitive",   exp == "exp2") %>% dplyr::pull(n)
+insensitive_2 <- pattern_classes %>% dplyr::filter(pattern_type == "insensitive", exp == "exp2") %>% dplyr::pull(n)
+other_2       <- pattern_classes %>% dplyr::filter(pattern_type == "other",       exp == "exp2") %>% dplyr::pull(n)
+
+tot_1 <- sensitive_1 + insensitive_1 + other_1      
+tot_2 <- sensitive_2 + insensitive_2 + other_2
+
+sensitive_H0 <- 1/16
+insensitive_H0 <- 4/16
+other_H0 <- 11/16
+
+binom_pvalue <- function(x, n, p) {
+  (binom.test(x, n, p))$p.value %>% 
+    use_pretty_p()
+}
+```
+
+Again I could run some generic hypothesis tests (e.g., chi-square goodness-of-fit) but I'd prefer to pick out specific comparisons that have some direct relevance to the subject matter at hand. First, note that yes, the "sensitive" pattern occurs disproportionately often:
+
+- In experiment 1, we observe the "sensitive" pattern for `r sensitive_1` of the `r tot_1` cases. Under the null hypothesis this should occur with probability `r sensitive_H0`, whereas the sample rate is `r signif(sensitive_1 / tot_1, digits = 3)`. Binomial test p-value: `r binom_pvalue(sensitive_1, tot_1, sensitive_H0)`
+
+- In experiment 2, we observe the "sensitive" pattern for `r sensitive_2` of the `r tot_2` cases. Under the null hypothesis this should occur with probability `r sensitive_H0`, whereas the sample rate is `r signif(sensitive_2 / tot_2, digits = 3)`. Binomial test p-value: `r binom_pvalue(sensitive_2, tot_2, sensitive_H0)`
+
+This result is unambiguous!
+
+Next, notice that the four "insensitive" patterns are disproportionately common in experiment 1 (though the effect, if it exists, may not very large), but not experiment 2.
+
+- In experiment 1, we observe one of the four "insensitive" patterns for `r insensitive_1` of the `r tot_1` cases. Under the null hypothesis this should occur with probability `r insensitive_H0`, whereas the sample rate is `r signif(insensitive_1 / tot_1, digits = 3)`. Binomial test p-value: `r binom_pvalue(insensitive_1, tot_1, insensitive_H0)`
+
+- In experiment 2, we observe one of the four "insensitive" patterns for `r sensitive_2` of the `r tot_2` cases. Under the null hypothesis this should occur with probability `r insensitive_H0`, whereas the sample rate is `r signif(insensitive_2 / tot_2, digits = 3)`. Binomial test p-value: `r binom_pvalue(sensitive_2, tot_2, insensitive_H0)`
+
+It is possible that by we could "bump" these to significance by testing the rates of the "insensitive" patterns only to the "other" patterns. The idea here is that the "sensitive" patterns are so common relative to their supposed base rate that they're distorting the statistics for the "insensitive" patterns. Or, to put it in slightly different terms, the tests shown above aren't independent of one another. So if we *do* adopt this alternative approach and compare "insensitive" to other, here's what we get:
+
+- In experiment 1, we observe one of the four "insensitive" patterns for `r insensitive_1` of the `r insensitive_1 + other_1` cases that are not the "sensitive" pattern. Under the null hypothesis this should occur with probability `r insensitive_H0/(insensitive_H0 + other_H0)`, whereas the sample rate is `r signif(insensitive_1 / (insensitive_1 + other_1), digits = 3)`. Binomial test p-value: `r binom_pvalue(insensitive_1, insensitive_1 + other_1, insensitive_H0/(insensitive_H0 + other_H0))`
+
+- In experiment 2, we observe one of the four "insensitive" patterns for `r insensitive_2` of the `r insensitive_2 + other_2` cases that are not the "sensitive" pattern. Under the null hypothesis this should occur with probability `r insensitive_H0/(insensitive_H0 + other_H0)`, whereas the sample rate is `r signif(insensitive_2 / (insensitive_2 + other_2), digits = 3)`. Binomial test p-value: `r binom_pvalue(insensitive_2, insensitive_2 + other_2, insensitive_H0/(insensitive_H0 + other_H0))`
+
+Under this formulation of the hypothesis, the result for experiment 1 is now significant at a much more stringent level, but the result for experiment 2 remains non-significant. Looking at both formulations together (which both seem reasonable) I'd conclude that there's very little evidence to think that those four "insensitive" patterns occur with disproportionate frequency. 
+
+## Subgroup plots
+
+The preceding analysis suggests that we have some reasonable basis for claiming that the "sensitive" pattern is unusually prominent in the data, accounting for 30-40% of participants despite being such a specific pattern. It is of course the case that this classification is a little crude and likely quite noisy, since it is based on a binary classification of the slope of a regression line for each participant. Even so, it seems a reasonable criterion for extracting two subgroups: those that show the "sensitive" pattern `+++-`, and those that show some other pattern. However, for this analysis we will need to make a decision about how to classify participants whose data contain at least one non-directional result. Does `+++.` count as sensitive or not-sensitive, for example? For the purposes of this analysis, I'll classify participants based on whether their non-`.` results match the sensitive pattern. This means that `+++.` and `++.-` would both be counted as sensitive, but `+-.-` would count as non-sensitive. The only exception is the `....` case, for which we have no evidence at all, and I'll exclude those cases:
+
+```{r, message = FALSE}
+subgroup_individual <- human_individual %>% 
+  dplyr::left_join(patterns_individual, by = c("id", "exp")) %>% 
+  dplyr::mutate(pattern_type = dplyr::case_when(
+    cn_cd_pn_pd == "...." ~ "....",
+    stringr::str_detect(cn_cd_pn_pd, "[+.][+.][+.][-.]") ~ "sensitive",
+    TRUE ~ "not-sensitive"
+  ))
+
+subgroup_aggregate <- subgroup_individual %>% 
+  dplyr::filter(pattern_type != "....") %>% 
+  dplyr::group_by(sample_size, sampling_frame, test_item, exp, pattern_type) %>%
+  dplyr::summarise(
+    ci_lower = ci_quantile(response, .025),
+    ci_upper = ci_quantile(response, .975),
+    response = mean(response)
+  ) %>% 
+  dplyr::ungroup()
+```
+
+Here are the aggregated plots for the "sensitive" group:
+
+```{r}
+subgroup_aggregate %>% 
+  dplyr::filter(pattern_type == "sensitive") %>% 
+  empirical_plot()
+```
+
+This pattern is (unsurprisingly, since this was the basis of the selection) more or less exactly what the model predictions. When we look at the aggregated data for everyone else, we see data in which the effect of sample size is almost entirely non-existent. The responses increase with sample size for the near items (test items 1 and 2), but do not appear to be very different in the category sampling versus property sampling conditions. For the distant items, there are essentially no effects at all (or miniscule ones):
 
 
 ```{r}
- human_ss_effect %>% 
-  dplyr::mutate(upward = ss_effect > 0) %>% 
-  tidyr::unite("case", sampling_frame, stimulus) %>% 
-  tidyr::pivot_wider(id_cols = c(id, exp), names_from = case, values_from = upward) %>% 
-  dplyr::mutate(pattern_type = dplyr::case_when(
-    category_distant == TRUE & category_near == TRUE & property_distant == FALSE & property_near == TRUE ~ "canonical_frame",
-    category_distant == property_distant & category_near == property_near ~ "no_frame_effect",
-    TRUE ~ "other"
-  )) %>% 
-  dplyr::group_by(exp) %>% 
-  dplyr::count(pattern_type) 
-
+subgroup_aggregate %>% 
+  dplyr::filter(pattern_type == "not-sensitive") %>% 
+  empirical_plot()
 ```
-These numbers should be compared to the base rates expected by chance: only 1 of 16 patterns matches the canonical frame effect 4 of 16 patterns match the no-frame patterns, and the remaining 11 of 16 fall into the "other" bin.
+
+
+## Overall conclusions
+
+- Some people (maybe about a third???) are sensitive to the sampling manipulation in the precise pattern we expected to see. This proportion is much higher than we would expect by chance: the model is capturing a pattern of behaviour that is fairly common
+
+- The sensitivity doesn't seem to be universal, and among people who aren't sensitive, there is really not a lot of evidence to suggest an effect of frame or sample size (at least not for the distant/extrapolation items). For these people, the model as formulated by Hayes et al doesn't seem appropriate
+
+- Although crude, this classification system does seem somewhat warranted by the data. This is of some value for experiment 2, since we can compare participants on working memory capacity etc based on this categorisation. Here are the participants and the classifications I constructed:
+
+```{r}
+exp2_classification <- subgroup_individual %>% 
+  dplyr::filter(exp == "exp2") %>% 
+  dplyr::group_by(id) %>% 
+  dplyr::summarise(
+    age = dplyr::first(age),
+    gender = dplyr::first(gender),
+    cn_cd_pn_pd = dplyr::first(cn_cd_pn_pd),
+    pattern_type = dplyr::first(pattern_type)
+  ) %>% 
+  tidyr::separate(id, c("exp", "id")) %>% 
+  dplyr::mutate(id = as.numeric(id)) %>% 
+  dplyr::arrange(id) 
+
+readr::write_csv(
+  exp2_classification,
+  here::here("analysis", "exp2_classification.csv")
+)
+
+print(exp2_classification, n = 100)
+```
+
+Note that this table is also saved in the "analysis" folder of the repository, as "exp2_classification.csv"
+
+## Session info
+
+```{r, echo=TRUE}
+devtools::session_info()
+```
+
