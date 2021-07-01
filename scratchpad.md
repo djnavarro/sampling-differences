@@ -4,6 +4,7 @@
 - I've now added a new analysis of the empirical data that replaces the original one
   (with the "tadpole plots" etc). The findings aren't substantially different, but
   it's a little simpler than the original
+- The project now uses the renv package to manage the R environment reproducibly
 
 ## 1 July 2021
 
